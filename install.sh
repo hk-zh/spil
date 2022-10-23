@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd calvin_env/tacto
+cd calvin/tacto
 pip install -e .
 cd ..
 pip install -e .
