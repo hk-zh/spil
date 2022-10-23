@@ -188,7 +188,7 @@ def evaluate_policy(model, env, lang_embeddings, args):
 
 
 def evaluate_sequence(
-    env, model, task_checker, initial_state, eval_sequence, lang_embeddings, val_annotations, args, plans
+        env, model, task_checker, initial_state, eval_sequence, lang_embeddings, val_annotations, args, plans
 ):
     robot_obs, scene_obs = get_env_state_for_initial_condition(initial_state)
     env.reset(robot_obs=robot_obs, scene_obs=scene_obs)
@@ -307,7 +307,7 @@ def main():
             checkpoints = get_checkpoints_for_epochs(Path(args.train_folder), args.checkpoints)
         elif args.checkpoints is None and args.last_k_checkpoints is not None:
             print(f"Evaluating model with last {args.last_k_checkpoints} checkpoints.")
-            checkpoints = get_all_checkpoints(Path(args.train_folder))[-args.last_k_checkpoints :]
+            checkpoints = get_all_checkpoints(Path(args.train_folder))[-args.last_k_checkpoints:]
         elif args.checkpoint is not None:
             checkpoints = [Path(args.checkpoint)]
 
