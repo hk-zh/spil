@@ -7,8 +7,7 @@ class ActionDecoder(nn.Module):
     def act(
         self,
         latent_skill: torch.Tensor,
-        seq_l: torch.Tensor,
-        robot_obs: Optional[torch.Tensor]
+        seq_l: torch.Tensor
     ) -> torch.Tensor:
         raise NotImplementedError
 
@@ -16,8 +15,7 @@ class ActionDecoder(nn.Module):
         self,
         latent_skill: torch.Tensor,
         seq_l: torch.Tensor,
-        actions: torch.Tensor,
-        robot_obs: Optional[torch.Tensor]
+        actions: torch.Tensor
     ) -> torch.Tensor:
         raise NotImplementedError
 

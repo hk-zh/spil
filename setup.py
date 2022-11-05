@@ -22,10 +22,6 @@ def find_meta(_meta, string):
     raise RuntimeError(f"Unable to find {string} string.")
 
 
-install_requires = [
-    l for l in _read("requirements.txt").split("\n") if l and not l.startswith("#") and not l.startswith("-")
-]
-
 meta = dict(
     name=find_meta(_meta, "__project__"),
     version=find_meta(_meta, "__version__"),
@@ -33,12 +29,11 @@ meta = dict(
     description="Hierarchical Universal Language Conditioned Policies",
     platforms=("Any"),
     zip_safe=False,
-    keywords="pytorch hulc".split(),
+    keywords="pytorch Lfp".split(),
     author=find_meta(_meta, "__author__"),
     author_email=find_meta(_meta, "__email__"),
     url=" https://github.com/mees/hulc",
     packages=find_packages(exclude=["tests"]),
-    install_requires=install_requires,
 )
 
 if __name__ == "__main__":

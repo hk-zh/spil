@@ -2,6 +2,7 @@ defaults:
   - callbacks: default
   - datamodule: default
   - model: sbert
+    -
   - loss: default
   - training: default_training
   - trainer: play_trainer

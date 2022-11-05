@@ -1,0 +1,20 @@
+defaults:
+  - callbacks: default
+  - loss: default
+  - model: default
+  - training: default_training
+  - trainer: play_trainer
+  - logger: wandb
+  - datamodule: default
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+
+seed: 42
+log_dir: ../
+slurm: false
+
+hydra:
+  run:
+    dir: ${log_dir}/sg_runs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ${log_dir}/sg_runs/${now:%Y-%m-%d}/${now:%H-%M-%S}

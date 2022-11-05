@@ -1,0 +1,4 @@
+_target_: skill_generator.models.prior_locator.PriorLocator
+base_skills_num: 3
+p_hidden_dim: 128
+latent_dim: 10

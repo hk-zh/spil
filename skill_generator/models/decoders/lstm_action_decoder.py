@@ -3,7 +3,6 @@ from torch import nn
 from typing import Tuple, Optional
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from skill_generator.models.decoders.action_decoder import ActionDecoder
-from skill_generator.models.decoders.utils.gripper_control import tcp_to_world_frame, world_to_tcp_frame
 
 
 class LSTMActionDecoder(ActionDecoder):
@@ -41,26 +40,30 @@ class LSTMActionDecoder(ActionDecoder):
         x = self.mlp(x)
         return x
 
-    def loss(self, latent_skill: torch.Tensor, seq_l: torch.Tensor, actions: torch.Tensor, robot_obs: Optional[torch.Tensor]) -> torch.Tensor:
+    def loss(self, latent_skill: torch.Tensor, seq_l: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
         """
         Args:
             latent_skill:
             seq_l:
             actions:
-            robot_obs:
 
         Returns:
         """
         pred_actions = self.forward(latent_skill, seq_l)
-        if self.gripper_control:
-            actions_tcp = world_to_tcp_frame(actions, robot_obs)
-            self.criterion(pred_actions, actions_tcp)
         return self.criterion(pred_actions, actions)
 
-    def act(self, latent_skill: torch.Tensor, seq_l: torch.Tensor, robot_obs: Optional[torch.Tensor]) -> torch.Tensor:
+    def loss_and_acts(self, latent_skill: torch.Tensor, seq_l: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            latent_skill:
+            seq_l:
+            actions:
+
+        Returns:
+        """
+        pred_actions = self.forward(latent_skill, seq_l)
+        return self.criterion(pred_actions, actions), pred_actions
+
+    def acts(self, latent_skill: torch.Tensor, seq_l: torch.Tensor, robot_obs: Optional[torch.Tensor]) -> torch.Tensor:
         pred_actions = self(latent_skill, seq_l)
-        if self.gripper_control:
-            pred_actions_world = tcp_to_world_frame(pred_actions, robot_obs)
-            return pred_actions_world
-        else:
-            return pred_actions
+        return pred_actions

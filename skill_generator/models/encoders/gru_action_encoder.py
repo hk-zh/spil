@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from typing import Tuple
-from skill_generator.models.encoders.action_encoder import ActionEncoder
+from .action_encoder import ActionEncoder
 
 
 class GRUActionEncoder(ActionEncoder):
@@ -11,11 +11,11 @@ class GRUActionEncoder(ActionEncoder):
             act_dim: int,
             latent_dim: int,
             layer_size: int,
-            num_layer: int
+            num_layers: int
     ):
         super(GRUActionEncoder, self).__init__()
         self.act_dim = act_dim
-        self.gru = nn.GRU(input_size=act_dim, hidden_size=layer_size, batch_first=True, num_layers=num_layer)
+        self.gru = nn.GRU(input_size=act_dim, hidden_size=layer_size, batch_first=True, num_layers=num_layers)
         self.z_mu = nn.Linear(layer_size, latent_dim)
         self.z_scale = nn.Sequential(
             nn.Linear(layer_size, latent_dim),
