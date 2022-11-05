@@ -1,0 +1,5 @@
+__version__ = "0.0.1"
+__project__ = "Skill Generator"
+__author__ = "Hongkuan Zhou"
+__license__ = "MIT"
+__email__ = "zhouh@in.tum.de"

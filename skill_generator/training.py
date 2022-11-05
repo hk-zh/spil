@@ -1,18 +1,17 @@
+import sys
 import logging
 from pathlib import Path
-import sys
 from typing import List, Union
 
 # This is for using the locally installed repo clone when using slurm
 sys.path.insert(0, Path(__file__).absolute().parents[1].as_posix())
+import skill_generator.models.skill_generator as models_m
 import hydra
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf, ListConfig
 from pytorch_lightning import Callback, LightningModule, seed_everything, Trainer
-from pytorch_lightning.callbacks import LearningRateMonitor
-from pytorch_lightning.loggers import LightningLoggerBase
 from pytorch_lightning.utilities import rank_zero_only
-
-import hulc.models.hulc as models_m
+from pytorch_lightning.loggers import LightningLoggerBase
+from pytorch_lightning.callbacks import LearningRateMonitor
 from hulc.utils.utils import (
     get_git_commit_hash,
     get_last_checkpoint,
@@ -23,15 +22,15 @@ from hulc.utils.utils import (
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(config_path="../conf", config_name="config")
+@hydra.main(config_path="../conf_sg", config_name="config")
 def train(cfg: DictConfig) -> None:
     """
-    This is called to start a training.
-
+    This is called to start a training
     Args:
-        cfg: hydra config
+        cfg: training config
+
+    Returns: None
     """
-    # sets seeds for numpy, torch, python.random and PYTHONHASHSEED.
     seed_everything(cfg.seed, workers=True)  # type: ignore
     datamodule = hydra.utils.instantiate(cfg.datamodule)
     chk = get_last_checkpoint(Path.cwd())
@@ -41,8 +40,6 @@ def train(cfg: DictConfig) -> None:
         model = getattr(models_m, cfg.model["_target_"].split(".")[-1]).load_from_checkpoint(chk.as_posix())
     else:
         model = hydra.utils.instantiate(cfg.model)
-        if "pretrain_chk" in cfg:
-            initialize_pretrained_weights(model, cfg)
 
     log_rank_0(f"Training with the following config:\n{OmegaConf.to_yaml(cfg)}")
     log_rank_0("Repo commit hash: {}".format(get_git_commit_hash(Path(hydra.utils.to_absolute_path(__file__)))))
@@ -67,46 +64,30 @@ def train(cfg: DictConfig) -> None:
             modify_argv_hydra()
 
     trainer = Trainer(**trainer_args)
-
-    # Start training
-    trainer.fit(model, datamodule=datamodule, ckpt_path=chk)  # type: ignore
+    trainer.fit(model, datamodule=datamodule, ckpt_path=chk)
 
 
-def setup_callbacks(callbacks_cfg: DictConfig) -> List[Callback]:
+def is_multi_gpu_training(gpus: Union[int, str, ListConfig]) -> bool:
     """
-    Instantiate all training callbacks.
+    Parse pytorch-lightning gpu device selection,
+    see https://pytorch-lightning.readthedocs.io/en/stable/advanced/multi_gpu.html
 
     Args:
-        callbacks_cfg: DictConfig with all callback params
+        gpus: int, str or ListConfig specifying gpu devices
 
     Returns:
-        List of instantiated callbacks.
+        True if multi-gpu training (ddp), False otherwise.
     """
-    callbacks = [hydra.utils.instantiate(cb) for cb in callbacks_cfg.values()]
-    return callbacks
+    return (
+            (isinstance(gpus, int) and (gpus > 1 or gpus == -1))
+            or (isinstance(gpus, str) and len(gpus) > 1)
+            or (isinstance(gpus, ListConfig) and len(gpus) > 1)
+    )
 
-
-def setup_logger(cfg: DictConfig, model: LightningModule) -> LightningLoggerBase:
-    """
-    Set up the logger (tensorboard or wandb) from hydra config.
-
-    Args:
-        cfg: Hydra config
-        model: LightningModule
-
-    Returns:
-        logger
-    """
-    pathlib_cwd = Path.cwd()
-    if "group" in cfg.logger:
-        cfg.logger.group = pathlib_cwd.parent.name
-        cfg.logger.name = pathlib_cwd.parent.name + "/" + pathlib_cwd.name
-        cfg.logger.id = cfg.logger.name.replace("/", "_")
-        train_logger = hydra.utils.instantiate(cfg.logger)
-        # train_logger.watch(model)
-    else:
-        train_logger = hydra.utils.instantiate(cfg.logger)
-    return train_logger
+@rank_zero_only
+def log_rank_0(*args, **kwargs):
+    # when using ddp, only log with rank 0 process
+    logger.info(*args, **kwargs)
 
 
 def modify_argv_hydra() -> None:
@@ -134,29 +115,41 @@ def modify_argv_hydra() -> None:
 
         sys.argv.append(o)  # type: ignore
 
-
-def is_multi_gpu_training(gpus: Union[int, str, ListConfig]) -> bool:
+def setup_logger(cfg: DictConfig, model: LightningModule) -> LightningLoggerBase:
     """
-    Parse pytorch-lightning gpu device selection,
-    see https://pytorch-lightning.readthedocs.io/en/stable/advanced/multi_gpu.html
+    Set up the logger (tensorboard or wandb) from hydra config.
 
     Args:
-        gpus: int, str or ListConfig specifying gpu devices
+        cfg: Hydra config
+        model: LightningModule
 
     Returns:
-        True if multi-gpu training (ddp), False otherwise.
+        logger
     """
-    return (
-            (isinstance(gpus, int) and (gpus > 1 or gpus == -1))
-            or (isinstance(gpus, str) and len(gpus) > 1)
-            or (isinstance(gpus, ListConfig) and len(gpus) > 1)
-    )
+    pathlib_cwd = Path.cwd()
+    if "group" in cfg.logger:
+        cfg.logger.group = pathlib_cwd.parent.name
+        cfg.logger.name = pathlib_cwd.parent.name + "/" + pathlib_cwd.name
+        cfg.logger.id = cfg.logger.name.replace("/", "_")
+        train_logger = hydra.utils.instantiate(cfg.logger)
+        # train_logger.watch(model)
+    else:
+        train_logger = hydra.utils.instantiate(cfg.logger)
+    return train_logger
 
 
-@rank_zero_only
-def log_rank_0(*args, **kwargs):
-    # when using ddp, only log with rank 0 process
-    logger.info(*args, **kwargs)
+def setup_callbacks(callbacks_cfg: DictConfig) -> List[Callback]:
+    """
+    Instantiate all training callbacks.
+
+    Args:
+        callbacks_cfg: DictConfig with all callback params
+
+    Returns:
+        List of instantiated callbacks.
+    """
+    callbacks = [hydra.utils.instantiate(cb) for cb in callbacks_cfg.values()]
+    return callbacks
 
 
 if __name__ == "__main__":
