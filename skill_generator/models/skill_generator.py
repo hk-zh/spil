@@ -31,11 +31,12 @@ class SkillGenerator(pl.LightningModule):
         self.kl_beta = kl_beta
         self.skill_dim = skill_dim
         self.dist = Distribution(dist='continuous')
+        self.save_hyperparameters()
 
-    def forward(self, acts, seq_l):
+    def forward(self, acts, seq_l, robot_obs):
         B, _, _ = acts.shape
         z, z_mu, z_scale = self.encoder(acts, seq_l)
-        loss, rec_acts = self.decoder.loss_and_acts(z, seq_l, acts)
+        loss, rec_acts = self.decoder.loss_and_acts(z, seq_l, acts, robot_obs)
         prior_locs = self.prior_locator(B)
         ret = {
             'rec_acts': rec_acts,
@@ -92,17 +93,18 @@ class SkillGenerator(pl.LightningModule):
         translation = (energy[:, 0] + energy[:, 1] + energy[:, 2]) / 3
         rotation = (energy[:, 3] + energy[:, 4] + energy[:, 5]) / 3
         gripper = gripper_energy
-        translation /= 0.1
+        translation /= 0.13
         rotation /= 0.45
         gripper /= 2.
-        s = translation + rotation + gripper + eps
-        return torch.stack([translation / s, rotation / s, gripper / s], dim=1).to(self.device)
+        s = torch.exp(translation) + torch.exp(rotation) + torch.exp(gripper)
+        return torch.stack([torch.exp(translation) / s, torch.exp(rotation) / s, torch.exp(gripper) / s], dim=1).to(self.device)
 
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> STEP_OUTPUT:
         actions = batch['actions']
+        robot_obs = batch['state_info']['robot_obs']
         B, T, _ = actions.shape
         seq_l = self.seq_l.repeat(B)
-        ret = self.forward(actions, seq_l)
+        ret = self.forward(actions, seq_l, robot_obs)
         translation_prior_state = ContState(ret['p_mu'][:, 0], ret['p_scale'][:, 0])
         rotation_prior_state = ContState(ret['p_mu'][:, 1], ret['p_scale'][:, 1])
         grasp_prior_state = ContState(ret['p_mu'][:, 2], ret['p_scale'][:, 2])
@@ -126,9 +128,10 @@ class SkillGenerator(pl.LightningModule):
 
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Optional[STEP_OUTPUT]:
         actions = batch['actions']
+        robot_obs = batch['state_info']['robot_obs']
         B, T, _ = actions.shape
         seq_l = self.seq_l.repeat(B)
-        ret = self.forward(actions, seq_l)
+        ret = self.forward(actions, seq_l, robot_obs=robot_obs)
         translation_prior_state = ContState(ret['p_mu'][:, 0], ret['p_scale'][:, 0])
         rotation_prior_state = ContState(ret['p_mu'][:, 1], ret['p_scale'][:, 1])
         grasp_prior_state = ContState(ret['p_mu'][:, 2], ret['p_scale'][:, 2])
@@ -145,5 +148,6 @@ class SkillGenerator(pl.LightningModule):
         total_loss = rec_loss + self.kl_beta * reg_loss
 
         self.log("val/total_loss", total_loss)
-
+        self.log("val/prior_train_loss", prior_train_loss)
         return total_loss
+

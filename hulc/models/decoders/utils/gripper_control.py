@@ -18,7 +18,7 @@ def world_to_tcp_frame(action, robot_obs):
         b, s, _ = action.shape
         world_T_tcp = euler_angles_to_matrix(robot_obs[..., 3:6], convention="XYZ").float().view(-1, 3, 3)
         tcp_T_world = torch.inverse(world_T_tcp)
-        pos_w_rel = action[..., :3].view(-1, 3, 1)
+        pos_w_rel = action[..., :3].reshape(-1, 3, 1)
         pos_tcp_rel = tcp_T_world @ pos_w_rel
         # downscaling is necessary here to get pseudo infinitesimal rotation
         orn_w_rel = action[..., 3:6] * 0.01
@@ -40,7 +40,7 @@ def tcp_to_world_frame(action, robot_obs):
     with autocast(dtype=torch.float32):
         b, s, _ = action.shape
         world_T_tcp = euler_angles_to_matrix(robot_obs[..., 3:6], convention="XYZ").float().view(-1, 3, 3)
-        pos_tcp_rel = action[..., :3].view(-1, 3, 1)
+        pos_tcp_rel = action[..., :3].reshape(-1, 3, 1)
         pos_w_rel = world_T_tcp @ pos_tcp_rel
         # downscaling is necessary here to get pseudo infinitesimal rotation
         orn_tcp_rel = action[..., 3:6] * 0.01

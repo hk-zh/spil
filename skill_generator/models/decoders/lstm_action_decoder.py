@@ -3,7 +3,7 @@ from torch import nn
 from typing import Tuple, Optional
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from skill_generator.models.decoders.action_decoder import ActionDecoder
-
+from hulc.models.decoders.utils.gripper_control import tcp_to_world_frame, world_to_tcp_frame
 
 class LSTMActionDecoder(ActionDecoder):
     def __init__(self,
@@ -40,9 +40,10 @@ class LSTMActionDecoder(ActionDecoder):
         x = self.mlp(x)
         return x
 
-    def loss(self, latent_skill: torch.Tensor, seq_l: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+    def loss(self, latent_skill: torch.Tensor, seq_l: torch.Tensor, actions: torch.Tensor, robot_obs: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Args:
+            robot_obs:
             latent_skill:
             seq_l:
             actions:
@@ -50,20 +51,37 @@ class LSTMActionDecoder(ActionDecoder):
         Returns:
         """
         pred_actions = self.forward(latent_skill, seq_l)
-        return self.criterion(pred_actions, actions)
+        if self.gripper_control:
+            actions_tcp = world_to_tcp_frame(actions, robot_obs)
+            loss = self.criterion(pred_actions, actions_tcp)
+        else:
+            loss = self.criterion(pred_actions, actions)
+        return loss
 
-    def loss_and_acts(self, latent_skill: torch.Tensor, seq_l: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+    def loss_and_acts(self, latent_skill: torch.Tensor, seq_l: torch.Tensor, actions: torch.Tensor, robot_obs: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
         Args:
+            robot_obs:
             latent_skill:
             seq_l:
             actions:
-
         Returns:
+
         """
         pred_actions = self.forward(latent_skill, seq_l)
-        return self.criterion(pred_actions, actions), pred_actions
+        if self.gripper_control:
+            actions_tcp = world_to_tcp_frame(actions, robot_obs)
+            loss = self.criterion(pred_actions, actions_tcp)
+            pred_actions_world = tcp_to_world_frame(pred_actions, robot_obs)
+            return loss, pred_actions_world
+        else:
+            loss = self.criterion(pred_actions, actions)
+            return loss, pred_actions
 
     def acts(self, latent_skill: torch.Tensor, seq_l: torch.Tensor, robot_obs: Optional[torch.Tensor]) -> torch.Tensor:
         pred_actions = self(latent_skill, seq_l)
-        return pred_actions
+        if self.gripper_control:
+            pred_actions_world = tcp_to_world_frame(pred_actions, robot_obs)
+            return pred_actions_world
+        else:
+            return pred_actions

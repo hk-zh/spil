@@ -1,0 +1,18 @@
+_target_: hulc.models.decoders.skill_decoder.SkillDecoder
+hidden_size: 2048
+hidden_size2: 512
+out_features: 10
+policy_rnn_dropout_p: 0.0
+latent_goal_features: ${model.visual_goal.latent_goal_features}
+perceptual_features: ???
+plan_features: ???
+lang_in_features: ${model.language_encoder.out_features}
+criterion: HuberLoss  # MSELoss
+num_layers: 2
+rnn_model: rnn_decoder
+skill_len: 5
+sg_chk_path: './checkpoints/SKILL_GENERATOR'
+beta: 0.01
+perceptual_emb_slice: [64, 128]
+time_slice: [0, -1, 5]
+gripper_control: true

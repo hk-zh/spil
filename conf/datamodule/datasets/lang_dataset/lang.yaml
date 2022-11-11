@@ -1,7 +1,7 @@
 _target_: hulc.datasets.disk_dataset.DiskDataset
 key: "lang"
 save_format: "npz"
-batch_size: 64
+batch_size: 8
 min_window_size: 20
 max_window_size: 32
 proprio_state: ${datamodule.proprioception_dims}
@@ -10,4 +10,4 @@ skip_frames: 1
 pad: true
 lang_folder: "lang_paraphrase-MiniLM-L3-v2"
 aux_lang_loss_window: 8
-num_workers: 10
+num_workers: 4

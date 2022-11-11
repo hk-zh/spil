@@ -6,6 +6,7 @@ import torch.nn as nn
 
 from hulc.models.decoders.action_decoder import ActionDecoder
 from hulc.models.decoders.utils.gripper_control import tcp_to_world_frame, world_to_tcp_frame
+from hulc.models.decoders.utils.rnn import gru_decoder, lstm_decoder, mlp_decoder, rnn_decoder  # needed for line 60
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,7 @@ class DeterministicDecoder(ActionDecoder):
         latent_goal: torch.Tensor,
         actions: torch.Tensor,
         robot_obs: Optional[torch.Tensor] = None,
+        lang_emb: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         pred_actions, _ = self(latent_plan, perceptual_emb, latent_goal)
         # loss
@@ -86,6 +88,7 @@ class DeterministicDecoder(ActionDecoder):
         latent_goal: torch.Tensor,
         actions: torch.Tensor,
         robot_obs: Optional[torch.Tensor] = None,
+        lang_emb: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
         pred_actions, _ = self(latent_plan, perceptual_emb, latent_goal)
         if self.gripper_control:

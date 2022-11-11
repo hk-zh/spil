@@ -1,6 +1,6 @@
 _target_: hulc.models.encoders.lang_encoder.LanguageEncoder
 language_features: 384
-hidden_size: 2048
-out_features: 256
+hidden_size: 1024
+out_features: 128
 word_dropout_p: 0.0
 activation_function: ReLU #ELU
