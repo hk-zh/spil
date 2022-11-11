@@ -84,6 +84,7 @@ def is_multi_gpu_training(gpus: Union[int, str, ListConfig]) -> bool:
             or (isinstance(gpus, ListConfig) and len(gpus) > 1)
     )
 
+
 @rank_zero_only
 def log_rank_0(*args, **kwargs):
     # when using ddp, only log with rank 0 process
@@ -114,6 +115,7 @@ def modify_argv_hydra() -> None:
             continue
 
         sys.argv.append(o)  # type: ignore
+
 
 def setup_logger(cfg: DictConfig, model: LightningModule) -> LightningLoggerBase:
     """

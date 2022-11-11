@@ -77,6 +77,7 @@ class Hulc(pl.LightningModule):
         use_clip_auxiliary_loss: bool,
         clip_auxiliary_loss_beta: float,
         replan_freq: int = 30,
+        language_encoder: Optional[DictConfig] = None,
         bc_z_lang_decoder: Optional[DictConfig] = None,
         mia_lang_discriminator: Optional[DictConfig] = None,
         proj_vis_lang: Optional[DictConfig] = None,
@@ -99,6 +100,9 @@ class Hulc(pl.LightningModule):
         # goal encoders
         self.visual_goal = hydra.utils.instantiate(visual_goal)
         self.language_goal = hydra.utils.instantiate(language_goal) if language_goal else None
+
+        # language encoder
+        self.language_encoder = hydra.utils.instantiate(language_encoder) if language_encoder else None
 
         # policy network
         self.action_decoder: ActionDecoder = hydra.utils.instantiate(action_decoder)
@@ -250,7 +254,7 @@ class Hulc(pl.LightningModule):
         }
 
     def lmp_train(
-        self, perceptual_emb: torch.Tensor, latent_goal: torch.Tensor, train_acts: torch.Tensor, robot_obs: torch.Tensor
+        self, perceptual_emb: torch.Tensor, latent_goal: torch.Tensor, train_acts: torch.Tensor, robot_obs: torch.Tensor, lang_emb = None
     ) -> Tuple[
         torch.Tensor,
         torch.Tensor,
@@ -263,11 +267,11 @@ class Hulc(pl.LightningModule):
         Main forward pass for training step after encoding raw inputs.
 
         Args:
+            lang_emb: the embedding contains language instruction information.
             perceptual_emb: Encoded input modalities.
             latent_goal: Goal embedding (visual or language goal).
             train_acts: Ground truth actions.
             robot_obs: Unnormalized proprioceptive state (only used for world to tcp frame conversion in decoder).
-
         Returns:
             kl_loss: KL loss
             action_loss: Behavior cloning action loss.
@@ -289,7 +293,7 @@ class Hulc(pl.LightningModule):
             sampled_plan = torch.flatten(sampled_plan, start_dim=-2, end_dim=-1)
 
         action_loss = self.action_decoder.loss(
-            sampled_plan, perceptual_emb, latent_goal, train_acts, robot_obs
+            sampled_plan, perceptual_emb, latent_goal, train_acts, robot_obs, lang_emb=lang_emb
         )  # type:  ignore
         kl_loss = self.compute_kl_loss(pp_state, pr_state)
         total_loss = action_loss + kl_loss
@@ -436,10 +440,15 @@ class Hulc(pl.LightningModule):
                 proprio_loss += self.perceptual_encoder.state_reconstruction_loss()
             if "lang" in self.modality_scope:
                 latent_goal = self.language_goal(dataset_batch["lang"])
+                if self.language_encoder is not None:
+                    lang_emb = self.language_encoder(dataset_batch["lang"])
+                else:
+                    lang_emb = None
             else:
                 latent_goal = self.visual_goal(perceptual_emb[:, -1])
+                lang_emb = None
             kl, act_loss, mod_loss, pp_dist, pr_dist, seq_feat = self.lmp_train(
-                perceptual_emb, latent_goal, dataset_batch["actions"], dataset_batch["state_info"]["robot_obs"]
+                perceptual_emb, latent_goal, dataset_batch["actions"], dataset_batch["state_info"]["robot_obs"], lang_emb=lang_emb
             )
             if "lang" in self.modality_scope:
                 if not torch.any(dataset_batch["use_for_aux_lang_loss"]):
@@ -735,6 +744,8 @@ class Hulc(pl.LightningModule):
         """
         output = {}
         val_total_act_loss_pp = torch.tensor(0.0).to(self.device)
+        total_bs = 0.
+        batch_size: Dict[str, int] = {}
         for self.modality_scope, dataset_batch in batch.items():
             perceptual_emb = self.perceptual_encoder(
                 dataset_batch["rgb_obs"], dataset_batch["depth_obs"], dataset_batch["robot_obs"]
@@ -761,23 +772,25 @@ class Hulc(pl.LightningModule):
             ) = self.lmp_val(
                 perceptual_emb, latent_goal, dataset_batch["actions"], dataset_batch["state_info"]["robot_obs"]
             )
+            batch_size[self.modality_scope] = dataset_batch["actions"].shape[0]
+            total_bs += dataset_batch["actions"].shape[0]
             if "lang" in self.modality_scope:
                 if self.use_bc_z_auxiliary_loss:
                     val_pred_lang_loss = self.bc_z_auxiliary_loss(
                         seq_feat, dataset_batch["lang"], dataset_batch["use_for_aux_lang_loss"]
                     )
-                    self.log("val/lang_pred_loss", val_pred_lang_loss, sync_dist=True)
+                    self.log("val/lang_pred_loss", val_pred_lang_loss, sync_dist=True, batch_size=batch_size[self.modality_scope], on_step=False)
                 if self.use_clip_auxiliary_loss:
                     val_pred_clip_loss = self.clip_auxiliary_loss(
                         seq_feat, latent_goal, dataset_batch["use_for_aux_lang_loss"]
                     )
-                    self.log("val/val_pred_clip_loss", val_pred_clip_loss, sync_dist=True)
+                    self.log("val/val_pred_clip_loss", val_pred_clip_loss, sync_dist=True, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False)
                     self.clip_groundtruth(seq_feat, dataset_batch["idx"], dataset_batch["use_for_aux_lang_loss"])
                 if self.use_mia_auxiliary_loss:
                     val_pred_contrastive_loss = self.mia_auxiliary_loss(
                         seq_feat, latent_goal, dataset_batch["use_for_aux_lang_loss"]
                     )
-                    self.log("val/lang_contrastive_loss", val_pred_contrastive_loss, sync_dist=True)
+                    self.log("val/lang_contrastive_loss", val_pred_contrastive_loss, sync_dist=True, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False)
             val_total_act_loss_pp += action_loss_pp
             pr_mae_mean = mae_pr.mean()
             pp_mae_mean = mae_pp.mean()
@@ -785,26 +798,29 @@ class Hulc(pl.LightningModule):
             pos_mae_pr = mae_pr[..., :3].mean()
             orn_mae_pp = mae_pp[..., 3:6].mean()
             orn_mae_pr = mae_pr[..., 3:6].mean()
-            self.log(f"val_total_mae/{self.modality_scope}_total_mae_pr", pr_mae_mean, sync_dist=True)
-            self.log(f"val_total_mae/{self.modality_scope}_total_mae_pp", pp_mae_mean, sync_dist=True)
-            self.log(f"val_pos_mae/{self.modality_scope}_pos_mae_pr", pos_mae_pr, sync_dist=True)
-            self.log(f"val_pos_mae/{self.modality_scope}_pos_mae_pp", pos_mae_pp, sync_dist=True)
-            self.log(f"val_orn_mae/{self.modality_scope}_orn_mae_pr", orn_mae_pr, sync_dist=True)
-            self.log(f"val_orn_mae/{self.modality_scope}_orn_mae_pp", orn_mae_pp, sync_dist=True)
-            self.log(f"val_kl/{self.modality_scope}_kl_loss", kl_loss, sync_dist=True)
-            self.log(f"val_act/{self.modality_scope}_act_loss_pp", action_loss_pp, sync_dist=True)
-            self.log(f"val_act/{self.modality_scope}_act_loss_pr", action_loss_pr, sync_dist=True)
-            self.log(f"val_grip/{self.modality_scope}_grip_sr_pr", gripper_sr_pr, sync_dist=True)
-            self.log(f"val_grip/{self.modality_scope}_grip_sr_pp", gripper_sr_pp, sync_dist=True)
-            self.log(
-                "val_act/action_loss_pp",
-                val_total_act_loss_pp / len(self.trainer.datamodule.modalities),  # type:ignore
-                sync_dist=True,
-            )
+            self.log(f"val_total_mae/{self.modality_scope}_total_mae_pr", pr_mae_mean, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+            self.log(f"val_total_mae/{self.modality_scope}_total_mae_pp", pp_mae_mean, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+            self.log(f"val_pos_mae/{self.modality_scope}_pos_mae_pr", pos_mae_pr, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+            self.log(f"val_pos_mae/{self.modality_scope}_pos_mae_pp", pos_mae_pp, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+            self.log(f"val_orn_mae/{self.modality_scope}_orn_mae_pr", orn_mae_pr, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+            self.log(f"val_orn_mae/{self.modality_scope}_orn_mae_pp", orn_mae_pp, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+            self.log(f"val_kl/{self.modality_scope}_kl_loss", kl_loss, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+            self.log(f"val_act/{self.modality_scope}_act_loss_pp", action_loss_pp, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+            self.log(f"val_act/{self.modality_scope}_act_loss_pr", action_loss_pr, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+            self.log(f"val_grip/{self.modality_scope}_grip_sr_pr", gripper_sr_pr, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+            self.log(f"val_grip/{self.modality_scope}_grip_sr_pp", gripper_sr_pp, batch_size=batch_size[self.modality_scope], on_epoch=True, on_step=False, sync_dist=True)
+
             output[f"sampled_plan_pp_{self.modality_scope}"] = sampled_plan_pp
             output[f"sampled_plan_pr_{self.modality_scope}"] = sampled_plan_pr
             output[f"idx_{self.modality_scope}"] = dataset_batch["idx"]
-
+        self.log(
+            "val_act/action_loss_pp",
+            val_total_act_loss_pp / len(batch),  # type:ignore
+            batch_size=total_bs,
+            on_epoch=True,
+            on_step=False,
+            sync_dist=True,
+        )
         return output
 
     def reset(self):

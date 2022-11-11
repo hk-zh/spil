@@ -35,15 +35,15 @@ class PriorLocator(nn.Module):
         )
         self.register_buffer('one_hot_keys', torch.eye(base_skills_num))
 
-    def forward(self, batch_size):
+    def forward(self, repeat):
         p_mu = self.prior_mu_extractor(self.one_hot_keys)
         p_scale = self.prior_scale_extractor(self.one_hot_keys)
 
         p_mu = p_mu[None, ...]
         p_scale = p_scale[None, ...]
 
-        p_mu = torch.tile(p_mu, (batch_size, 1, 1))
-        p_scale = torch.tile(p_scale, (batch_size, 1, 1))
+        p_mu = torch.tile(p_mu, (repeat, 1, 1))
+        p_scale = torch.tile(p_scale, (repeat, 1, 1))
 
         ret = {
             'p_mu': p_mu,

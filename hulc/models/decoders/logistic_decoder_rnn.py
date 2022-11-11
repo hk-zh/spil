@@ -89,6 +89,7 @@ class LogisticDecoderRNN(ActionDecoder):
         latent_goal: torch.Tensor,
         actions: torch.Tensor,
         robot_obs: Optional[torch.Tensor] = None,
+        lang_emb: Optional[torch.Tensor] = None
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         logit_probs, log_scales, means, gripper_act, _ = self(latent_plan, perceptual_emb, latent_goal)
         pred_actions = self._sample(logit_probs, log_scales, means, gripper_act)
@@ -125,6 +126,7 @@ class LogisticDecoderRNN(ActionDecoder):
         latent_goal: torch.Tensor,
         actions: torch.Tensor,
         robot_obs: Optional[torch.Tensor] = None,
+        lang_emb: Optional[torch.Tensor] = None
     ) -> torch.Tensor:  # type:  ignore
         logit_probs, log_scales, means, gripper_act, _ = self(latent_plan, perceptual_emb, latent_goal)
         if self.gripper_control:

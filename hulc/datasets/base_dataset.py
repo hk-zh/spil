@@ -120,6 +120,7 @@ class BaseDataset(Dataset):
             sequence = self._pad_sequence(sequence, pad_size)
         return sequence
 
+
     def _get_sequences(self, idx: int, window_size: int) -> Dict:
         """
         Load sequence of length window_size.

@@ -119,7 +119,8 @@ class BaseDataset(Dataset):
 
         episode = self._load_episode(idx, window_size)
         seq_acts = process_actions(episode, self.observation_space, self.transforms)
-        seq_dict = {**seq_acts, "idx": idx}  # type:ignore
+        info = get_state_info_dict(episode)
+        seq_dict = {**seq_acts, **info, "idx": idx}  # type:ignore
 
         return seq_dict
 
