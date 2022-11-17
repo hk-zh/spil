@@ -1,1 +1,2 @@
 actions: ['rel_actions']
+state_obs: ['robot_obs']
