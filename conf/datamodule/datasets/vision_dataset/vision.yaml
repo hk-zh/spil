@@ -8,4 +8,4 @@ proprio_state: ${datamodule.proprioception_dims}
 obs_space: ${datamodule.observation_space}
 pad: true
 lang_folder: "lang_paraphrase-MiniLM-L3-v2"
-num_workers: 4
+num_workers: 8

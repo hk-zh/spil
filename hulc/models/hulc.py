@@ -355,7 +355,7 @@ class Hulc(pl.LightningModule):
         m = gripper_discrete_pp > 0
         gripper_discrete_pp[m] = 1
         gripper_discrete_pp[~m] = -1
-        gripper_sr_pp = torch.mean((gt_gripper_act == gripper_discrete_pp).float())
+        gripper_sr_pp = torch.mean((gt_gripper_act != gripper_discrete_pp).float())
 
         # ------------Plan Recognition------------ #
         pr_state, seq_feat = self.plan_recognition(perceptual_emb)
@@ -374,7 +374,7 @@ class Hulc(pl.LightningModule):
         m = gripper_discrete_pr > 0
         gripper_discrete_pr[m] = 1
         gripper_discrete_pr[~m] = -1
-        gripper_sr_pr = torch.mean((gt_gripper_act == gripper_discrete_pr).float())
+        gripper_sr_pr = torch.mean((gt_gripper_act != gripper_discrete_pr).float())
 
         return (
             sampled_plan_pp,
