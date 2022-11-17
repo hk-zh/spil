@@ -137,9 +137,6 @@ runs
 # nohups
 nohup*.out
 
-# submoduels
-calvin
-
 checkpoints/HULC*
 
 dataset/calvin_debug_dataset/
