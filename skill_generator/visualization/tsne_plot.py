@@ -1,11 +1,10 @@
 from MulticoreTSNE import MulticoreTSNE as TSNE
 import numpy as np
 from PIL import Image
-from pytorch_lightning import Callback, LightningModule, Trainer
-from typing import Any, Optional, Tuple
+from pytorch_lightning import Callback
+from typing import Any, Optional
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 import pytorch_lightning as pl
-import plotly.graph_objects as go
 from pytorch_lightning.loggers import WandbLogger
 import plotly.express as px
 import io
