@@ -1,0 +1,3 @@
+seed: 42
+log_dir: ../
+slurm: false

@@ -150,7 +150,6 @@ class BaseDataset(Dataset):
         start_idx = self.episode_lookup[idx]
         end_idx = start_idx + window_size
         keys = list(chain(*self.observation_space.values()))
-        keys.remove("language")
         keys.append("scene_obs")
         episodes = [self.load_file(self._get_episode_name(file_idx)) for file_idx in range(start_idx, end_idx)]
         episode = {key: np.stack([ep[key] for ep in episodes]) for key in keys}
