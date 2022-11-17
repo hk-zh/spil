@@ -1,5 +1,0 @@
-_target_: skill_generator.models.encoders.lstm_action_encoder.LSTMActionEncoder
-act_dim: ${datamodule.action_space}
-latent_dim: ${model.skill_dim}
-layer_size: 128
-num_layers: 2
