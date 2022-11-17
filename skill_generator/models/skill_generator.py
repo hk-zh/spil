@@ -7,6 +7,7 @@ from typing import Any, Dict, NamedTuple, Optional, Tuple, Union
 import torch.distributions as D
 
 from skill_generator.utils.distributions import State, ContState, Distribution
+from hulc.models.decoders.utils.gripper_control import tcp_to_world_frame, world_to_tcp_frame
 
 
 class SkillGenerator(pl.LightningModule):
@@ -18,8 +19,11 @@ class SkillGenerator(pl.LightningModule):
             optimizer: DictConfig,
             lr_scheduler: DictConfig,
             kl_beta: float,
+            kl_sigma: float,
+            prior_seeking_mode: int,
             skill_dim: int,
-            skill_len: int
+            skill_len: int,
+            scale: Tuple
     ):
         super().__init__()
         self.encoder = hydra.utils.instantiate(action_encoder)
@@ -29,14 +33,17 @@ class SkillGenerator(pl.LightningModule):
         self.lr_scheduler = lr_scheduler
         self.seq_l = torch.tensor(skill_len)
         self.kl_beta = kl_beta
+        self.kl_sigma = kl_sigma
+        self.mode = prior_seeking_mode
         self.skill_dim = skill_dim
         self.dist = Distribution(dist='continuous')
+        self.scale = scale
         self.save_hyperparameters()
 
-    def forward(self, acts, seq_l, robot_obs):
+    def forward(self, acts, seq_l):
         B, _, _ = acts.shape
         z, z_mu, z_scale = self.encoder(acts, seq_l)
-        loss, rec_acts = self.decoder.loss_and_acts(z, seq_l, acts, robot_obs)
+        loss, rec_acts = self.decoder.loss_and_acts(z, seq_l, acts)
         prior_locs = self.prior_locator(B)
         ret = {
             'rec_acts': rec_acts,
@@ -44,7 +51,8 @@ class SkillGenerator(pl.LightningModule):
             'p_mu': prior_locs['p_mu'],
             'p_scale': prior_locs['p_scale'],
             'z_mu': z_mu,
-            'z_scale': z_scale
+            'z_scale': z_scale,
+            'z': z
         }
         return ret
 
@@ -93,18 +101,26 @@ class SkillGenerator(pl.LightningModule):
         translation = (energy[:, 0] + energy[:, 1] + energy[:, 2]) / 3
         rotation = (energy[:, 3] + energy[:, 4] + energy[:, 5]) / 3
         gripper = gripper_energy
-        translation /= 0.13
-        rotation /= 0.45
-        gripper /= 2.
-        s = torch.exp(translation) + torch.exp(rotation) + torch.exp(gripper)
-        return torch.stack([torch.exp(translation) / s, torch.exp(rotation) / s, torch.exp(gripper) / s], dim=1).to(self.device)
+        translation /= self.scale[0]
+        rotation /= self.scale[1]
+        gripper /= self.scale[2]
+        t = torch.stack([translation, rotation, gripper], dim=-1)
+        B, _ = t.shape
+        skill_types = torch.argmax(t, dim=-1)
+        one_hot_key = torch.zeros_like(t)
+        one_hot_key[torch.arange(B), skill_types] = 1.
+        return {
+            'one_hot_key': one_hot_key,
+            'skill_types': skill_types
+        }
 
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> STEP_OUTPUT:
         actions = batch['actions']
         robot_obs = batch['state_info']['robot_obs']
+        tcp_actions = world_to_tcp_frame(actions, robot_obs=robot_obs)
         B, T, _ = actions.shape
         seq_l = self.seq_l.repeat(B)
-        ret = self.forward(actions, seq_l, robot_obs)
+        ret = self.forward(tcp_actions, seq_l)
         translation_prior_state = ContState(ret['p_mu'][:, 0], ret['p_scale'][:, 0])
         rotation_prior_state = ContState(ret['p_mu'][:, 1], ret['p_scale'][:, 1])
         grasp_prior_state = ContState(ret['p_mu'][:, 2], ret['p_scale'][:, 2])
@@ -113,12 +129,13 @@ class SkillGenerator(pl.LightningModule):
         rec_loss = ret['rec_loss']
         reg_loss = self.compute_kl_loss(skill_state, self.std_normal(B)).mean()
 
-        skill_types = self.skill_classifier(actions)
-        prior_train_loss = skill_types[:, 0] * self.compute_kl_loss(skill_state, translation_prior_state, mode=2) + \
-                           skill_types[:, 1] * self.compute_kl_loss(skill_state, rotation_prior_state, mode=2) + \
-                           skill_types[:, 2] * self.compute_kl_loss(skill_state, grasp_prior_state, mode=2)
+        sc_ret = self.skill_classifier(tcp_actions)
+        ohk, _ = sc_ret['one_hot_key'], sc_ret['skill_types']
+        prior_train_loss = ohk[:, 0] * self.compute_kl_loss(skill_state, translation_prior_state, mode=self.mode) + \
+                           ohk[:, 1] * self.compute_kl_loss(skill_state, rotation_prior_state, mode=self.mode) + \
+                           ohk[:, 2] * self.compute_kl_loss(skill_state, grasp_prior_state, mode=self.mode)
 
-        total_loss = rec_loss + self.kl_beta * reg_loss + prior_train_loss.mean()
+        total_loss = rec_loss + self.kl_beta * reg_loss + self.kl_sigma * prior_train_loss.mean()
 
         self.log("train/rec_loss", rec_loss)
         self.log("train/reg_loss", reg_loss.mean())
@@ -127,11 +144,14 @@ class SkillGenerator(pl.LightningModule):
         return total_loss
 
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> Optional[STEP_OUTPUT]:
+        output = {}
         actions = batch['actions']
         robot_obs = batch['state_info']['robot_obs']
+        tcp_actions = world_to_tcp_frame(actions, robot_obs=robot_obs)
+
         B, T, _ = actions.shape
         seq_l = self.seq_l.repeat(B)
-        ret = self.forward(actions, seq_l, robot_obs=robot_obs)
+        ret = self.forward(tcp_actions, seq_l)
         translation_prior_state = ContState(ret['p_mu'][:, 0], ret['p_scale'][:, 0])
         rotation_prior_state = ContState(ret['p_mu'][:, 1], ret['p_scale'][:, 1])
         grasp_prior_state = ContState(ret['p_mu'][:, 2], ret['p_scale'][:, 2])
@@ -140,14 +160,19 @@ class SkillGenerator(pl.LightningModule):
         rec_loss = ret['rec_loss']
         reg_loss = self.compute_kl_loss(skill_state, self.std_normal(B)).mean()
 
-        skill_types = self.skill_classifier(actions)
-        prior_train_loss = skill_types[:, 0] * self.compute_kl_loss(skill_state, translation_prior_state, mode=2) \
-                           + skill_types[:, 1] * self.compute_kl_loss(skill_state, rotation_prior_state, mode=2) \
-                           + skill_types[:, 2] * self.compute_kl_loss(skill_state, grasp_prior_state, mode=2)
+        sc_ret = self.skill_classifier(tcp_actions)
+        ohk, skill_types = sc_ret['one_hot_key'], sc_ret['skill_types']
+        prior_train_loss = ohk[:, 0] * self.compute_kl_loss(skill_state, translation_prior_state, mode=2) \
+                           + ohk[:, 1] * self.compute_kl_loss(skill_state, rotation_prior_state, mode=2) \
+                           + ohk[:, 2] * self.compute_kl_loss(skill_state, grasp_prior_state, mode=2)
 
         total_loss = rec_loss + self.kl_beta * reg_loss
 
         self.log("val/total_loss", total_loss)
         self.log("val/prior_train_loss", prior_train_loss)
-        return total_loss
+
+        output["latent_skills"] = ret['z']
+        output["skill_types"] = skill_types
+
+        return output
 
