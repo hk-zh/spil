@@ -58,7 +58,7 @@ def train(cfg: DictConfig) -> None:
         "logger": train_logger,
         "callbacks": callbacks,
         "benchmark": False,
-        "gradient_clip_val": 0.5
+        # "gradient_clip_val": 0.5
     }
 
     # Configure multi-GPU training

@@ -41,7 +41,7 @@ class SkillDecoder(ActionDecoder):
         in_features = (perceptual_emb_slice[1] - perceptual_emb_slice[0]) + latent_goal_features + plan_features
         self.rnn = eval(rnn_model)
         self.rnn = self.rnn(in_features, hidden_size, num_layers, policy_rnn_dropout_p)
-        self.skills = nn.Sequential(nn.Linear(hidden_size, out_features), nn.Tanh())
+        self.skills = nn.Linear(hidden_size, out_features)
 
         self.skill_selector = eval(rnn_model)
         self.skill_selector = self.skill_selector(lang_in_features, hidden_size2, num_layers, policy_rnn_dropout_p)
@@ -221,6 +221,15 @@ class SkillDecoder(ActionDecoder):
         else:
             return pred_actions
 
+    @staticmethod
+    def _hinge_loss(pred_gripper_actions, gt_gripper_actions, eps=0.2):
+        return torch.clamp(1.0 - pred_gripper_actions * gt_gripper_actions, min=eps).mean() - eps
+
+    def _loss(self, pred_actions, gt_actions, eps=1e-3):
+        loss = self.criterion(pred_actions[..., :6], gt_actions[..., :6])
+        hinge_loss = self._hinge_loss(pred_actions[..., 6], gt_actions[..., 6])
+        return (loss + hinge_loss) / 2.
+
     def loss_and_act(
             self,
             latent_plan: torch.Tensor,
@@ -241,6 +250,8 @@ class SkillDecoder(ActionDecoder):
 
         Returns:
             loss: the reconstruction and regularization loss for optimization
+            acts: the predicted actions sequence
+            reg_loss: the scaled reconstruction loss which regularize the skill bases
         """
 
         skill_emb, _, skill_cls, _, act_seq_len = self(
@@ -257,11 +268,11 @@ class SkillDecoder(ActionDecoder):
         # loss
         if self.gripper_control:
             actions_tcp = world_to_tcp_frame(actions, robot_obs)
-            loss = self.criterion(pred_actions, actions_tcp)
+            loss = self._loss(pred_actions, actions_tcp)
             pred_actions_world = tcp_to_world_frame(pred_actions, robot_obs)
             return loss + self.beta * reg_loss, pred_actions_world
         else:
-            loss = self.criterion(pred_actions, actions)
+            loss = self._loss(pred_actions, actions)
             return loss + self.beta * reg_loss, pred_actions
 
     def loss(
@@ -286,8 +297,8 @@ class SkillDecoder(ActionDecoder):
             reg_loss = 0.
         if self.gripper_control:
             actions_tcp = world_to_tcp_frame(actions, robot_obs)
-            loss = self.criterion(pred_actions, actions_tcp)
+            loss = self._loss(pred_actions, actions_tcp)
             return loss + self.beta * reg_loss
         else:
-            loss = self.criterion(pred_actions, actions)
+            loss = self._loss(pred_actions, actions)
             return loss + self.beta * reg_loss
