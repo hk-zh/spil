@@ -1,2 +1,3 @@
 defaults:
   - checkpoint: top2
+  - tsne_plot: default

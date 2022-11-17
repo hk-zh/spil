@@ -1,7 +1,7 @@
 _target_: skill_generator.models.skill_generator.SkillGenerator
 defaults:
-  - action_encoder: lstm_encoder
-  - action_decoder: lstm_decoder
+  - action_encoder: default
+  - action_decoder: deterministic
   - prior_locator: prior_locator
   - optimizer: adam
   - lr_scheduler: constant
@@ -10,3 +10,6 @@ _recursive_: false
 skill_dim: 10
 skill_len: ${datamodule.datasets.window_size}
 kl_beta: ${loss.kl_beta}
+kl_sigma: ${loss.kl_sigma}
+prior_seeking_mode: 2
+scale: [1.2, 1.3, 2.0]
