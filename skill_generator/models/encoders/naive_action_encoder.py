@@ -3,19 +3,23 @@ from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from typing import Tuple
 from .action_encoder import ActionEncoder
+from ..utils.rnn import rnn_decoder, lstm_decoder, gru_decoder  # import for eval
 
 
-class LSTMActionEncoder(ActionEncoder):
+class NaiveActionEncoder(ActionEncoder):
     def __init__(
             self,
             act_dim: int,
             latent_dim: int,
             layer_size: int,
             num_layers: int,
+            rnn_model: str,
+            policy_rnn_dropout_p: float
     ):
-        super(LSTMActionEncoder, self).__init__()
+        super(NaiveActionEncoder, self).__init__()
         self.act_dim = act_dim
-        self.lstm = nn.LSTM(input_size=act_dim, hidden_size=layer_size, batch_first=True, num_layers=num_layers)
+        self.rnn = eval(rnn_model)
+        self.rnn = self.rnn(in_features=act_dim, hidden_size=layer_size, num_layers=num_layers, policy_rnn_dropout_p=policy_rnn_dropout_p)
         self.z_mu = nn.Linear(layer_size, latent_dim)
         self.z_scale = nn.Sequential(
             nn.Linear(layer_size, latent_dim),
@@ -36,7 +40,7 @@ class LSTMActionEncoder(ActionEncoder):
         B, T, _ = x.shape
         x_packed = pack_padded_sequence(x, seq_l.cpu(), batch_first=True, enforce_sorted=False)
 
-        x_packed, _ = self.lstm(x_packed)
+        x_packed, _ = self.rnn(x_packed)
 
         x, lens = pad_packed_sequence(x_packed, batch_first=True, total_length=T)
         x = x[torch.arange(B), seq_l - 1, :]  # we only need the last hidden state
