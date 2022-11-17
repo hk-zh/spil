@@ -1,0 +1,7 @@
+_target_: skill_generator.models.encoders.naive_action_encoder.NaiveActionEncoder
+act_dim: ${datamodule.action_space}
+latent_dim: ${model.skill_dim}
+layer_size: 128
+num_layers: 2
+rnn_model: lstm_decoder
+policy_rnn_dropout_p: 0.0
