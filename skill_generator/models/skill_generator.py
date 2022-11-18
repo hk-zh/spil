@@ -8,6 +8,7 @@ import torch.distributions as D
 
 from skill_generator.utils.distributions import State, ContState, Distribution
 from hulc.models.decoders.utils.gripper_control import tcp_to_world_frame, world_to_tcp_frame
+import torch.nn.functional as F
 
 
 class SkillGenerator(pl.LightningModule):
@@ -158,6 +159,7 @@ class SkillGenerator(pl.LightningModule):
 
         skill_state = ContState(ret['z_mu'], ret['z_scale'])
         rec_loss = ret['rec_loss']
+
         reg_loss = self.compute_kl_loss(skill_state, self.std_normal(B)).mean()
 
         sc_ret = self.skill_classifier(tcp_actions)
@@ -168,8 +170,16 @@ class SkillGenerator(pl.LightningModule):
 
         total_loss = rec_loss + self.kl_beta * reg_loss
 
+        rec_acts = ret['rec_acts']
+        mae_trans_loss = F.l1_loss(rec_acts[..., :3], tcp_actions[..., :3])
+        mae_rot_loss = F.l1_loss(rec_acts[..., 3:6], tcp_actions[..., 3:6])
+        max_grp_loss = F.l1_loss(rec_acts[..., 6], tcp_actions[..., 6])
+
         self.log("val/total_loss", total_loss)
         self.log("val/prior_train_loss", prior_train_loss)
+        self.log("val/mae_trans_loss", mae_trans_loss)
+        self.log("val/mae_rot_loss", mae_rot_loss)
+        self.log("val/max_grp_loss", max_grp_loss)
 
         output["latent_skills"] = ret['z']
         output["skill_types"] = skill_types
