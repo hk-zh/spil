@@ -225,7 +225,7 @@ class SkillDecoder(ActionDecoder):
     def _hinge_loss(pred_gripper_actions, gt_gripper_actions, eps=0.2):
         return torch.clamp(1.0 - pred_gripper_actions * gt_gripper_actions, min=eps).mean() - eps
 
-    def _loss(self, pred_actions, gt_actions, eps=1e-3):
+    def _loss(self, pred_actions, gt_actions):
         loss = self.criterion(pred_actions[..., :6], gt_actions[..., :6])
         hinge_loss = self._hinge_loss(pred_actions[..., 6], gt_actions[..., 6])
         return (loss + hinge_loss) / 2.
