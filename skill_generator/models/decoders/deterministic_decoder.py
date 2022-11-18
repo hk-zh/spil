@@ -29,9 +29,8 @@ class DeterministicDecoder(ActionDecoder):
         return torch.clamp(1.0 - pred_gripper_actions * gt_gripper_actions, min=eps).mean()
 
     def _loss(self, pred_actions, gt_actions):
-        loss = self.criterion(pred_actions[..., :6], gt_actions[..., :6])
-        hinge_loss = self._hinge_loss(pred_actions[..., 6], gt_actions[..., 6])
-        return (loss + hinge_loss) / 2.
+        loss = self.criterion(pred_actions, gt_actions)
+        return loss
 
     def forward(self, latent_skill: torch.Tensor, seq_l: torch.Tensor) -> torch.Tensor:
         """
