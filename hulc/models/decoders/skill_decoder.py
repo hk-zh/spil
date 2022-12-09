@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 from hulc.models.decoders.utils.gripper_control import tcp_to_world_frame, world_to_tcp_frame
 from torch.distributions import Normal
+from collections import deque
 from hulc.models.decoders.utils.rnn import gru_decoder, lstm_decoder, mlp_decoder, rnn_decoder  # needed for line 60
 
 
@@ -60,6 +61,7 @@ class SkillDecoder(ActionDecoder):
 
         self.skill_len = torch.tensor(skill_len)
         self.beta = beta
+        self.cached_actions = deque([])
         self._load_checkpoint()
 
     def _load_checkpoint(self):
@@ -104,7 +106,7 @@ class SkillDecoder(ActionDecoder):
         return skill_cls, h_n
 
     def clear_hidden_state(self) -> None:
-        self.hidden_state = None
+        self.hidden_state = {'skill_emb': None, 'skill_cls': None}
 
     def forward(
             self,
@@ -149,7 +151,7 @@ class SkillDecoder(ActionDecoder):
     def _action_generation(
             self,
             skill_emb: torch.Tensor,
-            act_seq_len: int
+            act_seq_len: Optional[int] = None
     ) -> torch.Tensor:
         """
         Args:
@@ -165,7 +167,8 @@ class SkillDecoder(ActionDecoder):
         (_, T_a, N_a) = actions.shape
         pred_actions = actions.reshape(B, T_s, T_a, N_a)
         pred_actions = torch.flatten(pred_actions, start_dim=1, end_dim=2)
-        pred_actions = pred_actions[:, :act_seq_len, :]
+        if act_seq_len is not None:
+            pred_actions = pred_actions[:, :act_seq_len, :]
         return pred_actions
 
     def _reg_loss(
@@ -211,24 +214,30 @@ class SkillDecoder(ActionDecoder):
         Returns:
             pred_actions: the predicted actions with the shape of (B, T_a, N_a)
         """
-        skill_emb, self.hidden_state['skill_emb'], skill_cls, self.hidden_state['skill_cls'], act_seq_len = self(
-            latent_plan, perceptual_emb, latent_goal,
-            hs_0=self.hidden_state['skill_emb'], hc_0=self.hidden_state['skill_cls'])
-        pred_actions = self._action_generation(skill_emb, act_seq_len)
-        if self.gripper_control:
-            pred_actions_world = tcp_to_world_frame(pred_actions, robot_obs)
-            return pred_actions_world
-        else:
-            return pred_actions
+        if not self.cached_actions:
+            skill_emb, self.hidden_state['skill_emb'], skill_cls, self.hidden_state['skill_cls'], act_seq_len = self(
+                latent_plan, perceptual_emb, latent_goal,
+                hs_0=self.hidden_state['skill_emb'], hc_0=self.hidden_state['skill_cls'])
+            pred_actions = self._action_generation(skill_emb)
+            if self.gripper_control:
+                pred_actions_world = tcp_to_world_frame(pred_actions, robot_obs)
+                for i in range(pred_actions.shape[1]):
+                    self.cached_actions.append(pred_actions_world[:, i:i+1, :])
+            else:
+                for i in range(pred_actions.shape[1]):
+                    self.cached_actions.append(pred_actions[:, i:i+1, :])
+
+        return self.cached_actions.popleft()
+
 
     @staticmethod
-    def _hinge_loss(pred_gripper_actions, gt_gripper_actions, eps=0.2):
+    def _hinge_loss(pred_gripper_actions, gt_gripper_actions, eps=1e-6):
         return torch.clamp(1.0 - pred_gripper_actions * gt_gripper_actions, min=eps).mean() - eps
 
     def _loss(self, pred_actions, gt_actions):
         loss = self.criterion(pred_actions[..., :6], gt_actions[..., :6])
         hinge_loss = self._hinge_loss(pred_actions[..., 6], gt_actions[..., 6])
-        return (loss + hinge_loss) / 2.
+        return 0.85 * loss + 0.15 * hinge_loss
 
     def loss_and_act(
             self,

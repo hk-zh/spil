@@ -2,7 +2,7 @@ defaults:
   - perceptual_encoder: gripper_cam
   - plan_proposal: default
   - plan_recognition: transformers
-  - distribution:  continuous
+  - distribution:  discrete
   - visual_goal: default
   - language_goal: default
   - language_encoder: default

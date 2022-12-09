@@ -1,0 +1,1 @@
+python3 hulc/evaluation/evaluate_policy.py --dataset_path dataset/calvin_debug_dataset --train_folder ./runs/2022-11-29/14-37-16

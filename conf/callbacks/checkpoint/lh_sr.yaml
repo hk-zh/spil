@@ -1,5 +1,5 @@
 _target_: pytorch_lightning.callbacks.ModelCheckpoint
-save_top_k: 3
+save_top_k: 2
 verbose: True
 monitor: eval_lh/avg_seq_len
 mode: max

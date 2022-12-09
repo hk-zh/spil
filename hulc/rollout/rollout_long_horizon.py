@@ -145,7 +145,7 @@ class RolloutLongHorizon(Callback):
             for i in range(1, 6):
                 pl_module.log(f"eval_lh/sr_chain_{i}", torch.tensor(0.0), on_step=False, sync_dist=True)
             pl_module.log("eval_lh/avg_seq_len", torch.tensor(0.0), on_step=False, sync_dist=True)
-        elif pl_module.current_epoch >= self.skip_epochs and pl_module.current_epoch % self.rollout_freq == 0:
+        elif pl_module.current_epoch >= self.skip_epochs and (pl_module.current_epoch + 1) % self.rollout_freq == 0:
             results = self.evaluate_policy(pl_module)
 
             if self.num_videos > 0:
