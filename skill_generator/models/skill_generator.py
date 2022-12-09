@@ -24,7 +24,8 @@ class SkillGenerator(pl.LightningModule):
             prior_seeking_mode: int,
             skill_dim: int,
             skill_len: int,
-            scale: Tuple
+            magic_scale: Tuple,
+            prior_locator_weight: Tuple
     ):
         super().__init__()
         self.encoder = hydra.utils.instantiate(action_encoder)
@@ -38,7 +39,8 @@ class SkillGenerator(pl.LightningModule):
         self.mode = prior_seeking_mode
         self.skill_dim = skill_dim
         self.dist = Distribution(dist='continuous')
-        self.scale = scale
+        self.scale = magic_scale
+        self.pl_w = prior_locator_weight
         self.save_hyperparameters()
 
     def forward(self, acts, seq_l):
@@ -132,15 +134,15 @@ class SkillGenerator(pl.LightningModule):
 
         sc_ret = self.skill_classifier(tcp_actions)
         ohk, _ = sc_ret['one_hot_key'], sc_ret['skill_types']
-        prior_train_loss = ohk[:, 0] * self.compute_kl_loss(skill_state, translation_prior_state, mode=self.mode) + \
-                           ohk[:, 1] * self.compute_kl_loss(skill_state, rotation_prior_state, mode=self.mode) + \
-                           ohk[:, 2] * self.compute_kl_loss(skill_state, grasp_prior_state, mode=self.mode)
+        prior_train_loss = (self.pl_w[0] * ohk[:, 0] * self.compute_kl_loss(skill_state, translation_prior_state, mode=self.mode) +
+                            self.pl_w[1] * ohk[:, 1] * self.compute_kl_loss(skill_state, rotation_prior_state, mode=self.mode) +
+                            self.pl_w[2] * ohk[:, 2] * self.compute_kl_loss(skill_state, grasp_prior_state, mode=self.mode)).mean()
 
-        total_loss = rec_loss + self.kl_beta * reg_loss + self.kl_sigma * prior_train_loss.mean()
+        total_loss = rec_loss + self.kl_beta * reg_loss + self.kl_sigma * prior_train_loss
 
         self.log("train/rec_loss", rec_loss)
         self.log("train/reg_loss", reg_loss.mean())
-        self.log("train/prior_train_loss", prior_train_loss.mean())
+        self.log("train/prior_train_loss", prior_train_loss)
 
         return total_loss
 
@@ -164,11 +166,11 @@ class SkillGenerator(pl.LightningModule):
 
         sc_ret = self.skill_classifier(tcp_actions)
         ohk, skill_types = sc_ret['one_hot_key'], sc_ret['skill_types']
-        prior_train_loss = ohk[:, 0] * self.compute_kl_loss(skill_state, translation_prior_state, mode=2) \
-                           + ohk[:, 1] * self.compute_kl_loss(skill_state, rotation_prior_state, mode=2) \
-                           + ohk[:, 2] * self.compute_kl_loss(skill_state, grasp_prior_state, mode=2)
+        prior_train_loss = (self.pl_w[0] * ohk[:, 0] * self.compute_kl_loss(skill_state, translation_prior_state, mode=2)
+                            + self.pl_w[1] * ohk[:, 1] * self.compute_kl_loss(skill_state, rotation_prior_state, mode=2)
+                            + self.pl_w[2] * ohk[:, 2] * self.compute_kl_loss(skill_state, grasp_prior_state, mode=2)).mean()
 
-        total_loss = rec_loss + self.kl_beta * reg_loss
+        total_loss = rec_loss + self.kl_beta * reg_loss + self.kl_sigma * prior_train_loss
 
         rec_acts = ret['rec_acts']
         mae_trans_loss = F.l1_loss(rec_acts[..., :3], tcp_actions[..., :3])
@@ -179,10 +181,9 @@ class SkillGenerator(pl.LightningModule):
         self.log("val/prior_train_loss", prior_train_loss)
         self.log("val/mae_trans_loss", mae_trans_loss)
         self.log("val/mae_rot_loss", mae_rot_loss)
-        self.log("val/max_grp_loss", max_grp_loss)
+        self.log("val/mae_grp_loss", max_grp_loss)
 
         output["latent_skills"] = ret['z']
         output["skill_types"] = skill_types
 
         return output
-

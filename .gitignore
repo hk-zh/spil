@@ -133,6 +133,7 @@ dmypy.json
 
 # log files
 runs
+sg_runs
 
 # nohups
 nohup*.out

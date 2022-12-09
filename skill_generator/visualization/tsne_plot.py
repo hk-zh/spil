@@ -26,11 +26,12 @@ def log_figure(fig, logger, step, name):
         logger.experiment.add_image(name, plotly_fig2array(fig), global_step=step)
 
 
-def create_tsne_figure(x_tsne, labels, step, logger, name):
+def create_tsne_figure(x_tsne, labels, step, logger, name, opacity=0.3):
     fig = px.scatter(
         x=x_tsne[:, 0].flatten(),
         y=x_tsne[:, 1].flatten(),
         color=labels,
+        opacity=opacity
     )
     log_figure(fig, logger, step, name)
 
@@ -77,4 +78,4 @@ class TSNEPlot(Callback):
             sampled_skill_types = sampled_skill_types[ids]
 
             x_tsne = self._get_tsne(sampled_latent_skills)
-            create_tsne_figure(x_tsne, sampled_skill_types, pl_module.global_step, logger=pl_module.logger, name="skill_latent_space ")
+            create_tsne_figure(x_tsne, sampled_skill_types, pl_module.global_step, logger=pl_module.logger, name="skill_latent_space")

@@ -14,5 +14,5 @@ skill_len: 5
 sg_chk_path: './checkpoints/SKILL_GENERATOR'
 beta: 0.01
 perceptual_emb_slice: [64, 128]
-time_slice: [0, -1, 5]
+time_slice: [0, None, 5]
 gripper_control: true

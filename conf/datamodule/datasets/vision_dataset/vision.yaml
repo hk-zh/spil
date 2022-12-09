@@ -1,7 +1,7 @@
 _target_: hulc.datasets.disk_dataset.DiskDataset
 key: "vis"
 save_format: "npz"
-batch_size: 8
+batch_size: 2
 min_window_size: 20
 max_window_size: 32
 proprio_state: ${datamodule.proprioception_dims}
