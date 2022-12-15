@@ -39,7 +39,7 @@ def get_log_dir(log_dir):
         log_dir = Path(log_dir)
         os.makedirs(log_dir, exist_ok=True)
     else:
-        log_dir = Path(__file__).parents[3] / "evaluation"
+        log_dir = Path(__file__).parents[2] / "evaluation"
         if not log_dir.exists():
             log_dir = Path("/tmp/evaluation")
             os.makedirs(log_dir, exist_ok=True)
@@ -231,7 +231,7 @@ def rollout(env, model, task_oracle, args, subtask, lang_embeddings, val_annotat
         if args.debug:
             img = env.render(mode="rgb_array")
             join_vis_lang(img, lang_annotation)
-            time.sleep(3)
+            # time.sleep(3)
             print('action: ', action)
         # check if current step solves a task
         current_task_info = task_oracle.get_task_info_for_set(start_info, current_info, {subtask})

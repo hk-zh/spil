@@ -53,7 +53,7 @@ class SkillDecoder(ActionDecoder):
 
         self.criterion = getattr(nn, criterion)()
         self.perceptual_emb_slice = perceptual_emb_slice
-        self.time_slice = time_slice
+        self.time_slice = [0, None, skill_len]
         self.hidden_state = {'skill_emb': None, 'skill_cls': None}
         self.sg_chk_path = Path(sg_chk_path)
         if not self.sg_chk_path.is_absolute():

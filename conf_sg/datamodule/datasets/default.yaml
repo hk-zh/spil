@@ -1,7 +1,7 @@
 _target_: skill_generator.datasets.base_dataset.BaseDataset
 key: "acts"
 batch_size: 64
-window_size: 5
+window_size: ${model.skill_len}
 proprio_state: ${datamodule.proprioception_dims}
 obs_space: ${datamodule.observation_space}
 pad: true
