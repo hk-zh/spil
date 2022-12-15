@@ -8,9 +8,9 @@ defaults:
 _recursive_: false
 
 skill_dim: 15
-skill_len: ${datamodule.datasets.window_size}
+skill_len: 5
 kl_beta: ${loss.kl_beta}
 kl_sigma: ${loss.kl_sigma}
 prior_seeking_mode: 2
-magic_scale: [0.8, 1.85, 1.0]
-prior_locator_weight: [0.0625, 0.625, 0.3125]
+magic_scale: [1.4, 2.3, 0.8]
+prior_locator_weight: [0.16, 0.48, 0.36]

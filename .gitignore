@@ -139,6 +139,7 @@ sg_runs
 nohup*.out
 
 checkpoints/HULC*
+checkpoints/SKILL_GENERATOR*
 
 dataset/calvin_debug_dataset/
 dataset/task*

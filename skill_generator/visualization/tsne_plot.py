@@ -10,6 +10,8 @@ import plotly.express as px
 import io
 import torch
 
+base_skills = ['translation', 'rotation', 'grasping']
+
 
 def plotly_fig2array(fig):
     """convert Plotly fig to  an array"""
@@ -76,6 +78,6 @@ class TSNEPlot(Callback):
             ids = np.random.choice(n, replace=False, size=int(n * self.plot_percentage))
             sampled_latent_skills = sampled_latent_skills[ids]
             sampled_skill_types = sampled_skill_types[ids]
-
+            sampled_skill_types = [base_skills[i] for i in sampled_skill_types]
             x_tsne = self._get_tsne(sampled_latent_skills)
             create_tsne_figure(x_tsne, sampled_skill_types, pl_module.global_step, logger=pl_module.logger, name="skill_latent_space")
