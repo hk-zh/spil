@@ -460,12 +460,14 @@ class Hulc(pl.LightningModule):
                             seq_feat, dataset_batch["lang"], dataset_batch["use_for_aux_lang_loss"]
                         )
                     if self.use_clip_auxiliary_loss:
+                        lang_info = latent_goal if lang_emb is None else lang_emb
                         lang_clip_loss += self.clip_auxiliary_loss(
-                            seq_feat, latent_goal, dataset_batch["use_for_aux_lang_loss"]
+                            seq_feat, lang_info, dataset_batch["use_for_aux_lang_loss"]
                         )
                     if self.use_mia_auxiliary_loss:
+                        lang_info = latent_goal if lang_emb is None else lang_emb
                         lang_contrastive_loss += self.mia_auxiliary_loss(
-                            seq_feat, latent_goal, dataset_batch["use_for_aux_lang_loss"]
+                            seq_feat, lang_info, dataset_batch["use_for_aux_lang_loss"]
                         )
             encoders_dict[self.modality_scope] = [pp_dist, pr_dist]
             kl_loss += kl

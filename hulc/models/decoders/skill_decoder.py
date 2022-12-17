@@ -28,11 +28,11 @@ class SkillDecoder(ActionDecoder):
             criterion: str,
             num_layers: int,
             rnn_model: str,
-            perceptual_emb_slice: tuple,
-            time_slice: tuple,
+            perceptual_emb_slice: list,
             gripper_control: bool,
             sg_chk_path: str,
             skill_len: int,
+            skill_num: int,
             beta: float,
     ):
         super(SkillDecoder, self).__init__()
@@ -45,15 +45,16 @@ class SkillDecoder(ActionDecoder):
         self.skills = nn.Linear(hidden_size, out_features)
 
         self.skill_selector = eval(rnn_model)
-        self.skill_selector = self.skill_selector(lang_in_features, hidden_size2, num_layers, policy_rnn_dropout_p)
+        self.skill_selector = self.skill_selector((perceptual_emb_slice[1] - perceptual_emb_slice[0]) + lang_in_features, hidden_size2, num_layers, policy_rnn_dropout_p)
         self.skill_classes = nn.Sequential(
-            nn.Linear(hidden_size2, 3),
+            nn.Linear(hidden_size2, skill_num),
             nn.Softmax(dim=-1)
         )
 
         self.criterion = getattr(nn, criterion)()
         self.perceptual_emb_slice = perceptual_emb_slice
         self.time_slice = [0, None, skill_len]
+        self.skill_num = skill_num
         self.hidden_state = {'skill_emb': None, 'skill_cls': None}
         self.sg_chk_path = Path(sg_chk_path)
         if not self.sg_chk_path.is_absolute():
@@ -87,16 +88,17 @@ class SkillDecoder(ActionDecoder):
         skill_emb = self.skills(x)
         return skill_emb, h_n
 
-    def _get_skill_cls(self, lang_emb: torch.Tensor, h_0: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _get_skill_cls(self, lang_emb: torch.Tensor, perceptual_emb: torch.Tensor, h_0: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Args:
             lang_emb: the embedding contains the language information. It is used to construct sequences of skill types are the prior knowledge for skill sampling.
+            perceptual_emb: the start perceptual_emb of the first frame
             h_0: the initial hidden state for skill classes generation
 
         Returns:
 
         """
-        x = lang_emb
+        x = torch.cat([perceptual_emb, lang_emb], dim=-1)
         if not isinstance(self.skill_selector, nn.Sequential) and isinstance(self.skill_selector, nn.RNNBase):
             x, h_n = self.skill_selector(x, h_0)
         else:
@@ -120,9 +122,9 @@ class SkillDecoder(ActionDecoder):
         """
         Args:
             latent_plan: plan_embedding in the latent space with the shape of (B, N_z)
-            perceptual_emb: perceptual_embedding with the shape of (B, N_p)
+            perceptual_emb: perceptual_embedding with the shape of (B, T, N_p)
             latent_goal: goal_embedding with the shape of (B, N_g)
-            lang_emb: the embedding contains the language information. It is used to construct sequences of skill types are the prior knowledge for skill sampling.
+            lang_emb: the embedding contains the language information. It is used to reconstruct sequences of skill types that are the prior knowledge for skill sampling.
             hs_0: the initial hidden states for skill embedding sequences
             hc_0: the initial hidden states for skill class sequences
 
@@ -143,7 +145,7 @@ class SkillDecoder(ActionDecoder):
         skill_emb, hs_n = self._get_skill_emb(latent_plan, perceptual_emb, latent_goal, hs_0)
         if lang_emb is not None:
             lang_emb = lang_emb.unsqueeze(1).expand(-1, skill_seq_len, -1)
-            skill_cls, hc_n = self._get_skill_cls(lang_emb, hc_0)
+            skill_cls, hc_n = self._get_skill_cls(lang_emb,  perceptual_emb, hc_0)
         else:
             skill_cls, hc_n = None, None
         return skill_emb, hs_n, skill_cls, hc_n, act_seq_len
@@ -187,13 +189,10 @@ class SkillDecoder(ActionDecoder):
         """
         B, T, _ = skill_cls.shape
         priors = self.prior_locator(repeat=B * T)  # (B*T, 3, N)
-        dist_t = Normal(priors['p_mu'][:, 0, :].reshape(B, T, -1), priors['p_scale'][:, 0, :].reshape(B, T, -1))
-        dist_r = Normal(priors['p_mu'][:, 1, :].reshape(B, T, -1), priors['p_scale'][:, 1, :].reshape(B, T, -1))
-        dist_g = Normal(priors['p_mu'][:, 2, :].reshape(B, T, -1), priors['p_scale'][:, 2, :].reshape(B, T, -1))
-        nll_t = -1 * dist_t.log_prob(skill_emb).mean(dim=-1)
-        nll_r = -1 * dist_r.log_prob(skill_emb).mean(dim=-1)
-        nll_g = -1 * dist_g.log_prob(skill_emb).mean(dim=-1)  # (B,T)
-        return (nll_t * skill_cls[..., 0] + nll_r * skill_cls[..., 1] + nll_g * skill_cls[..., 2]).mean()
+        dist = [Normal(priors['p_mu'][:, i, :].reshape(B, T, -1), priors['p_scale'][:, i, :].reshape(B, T, -1)) for i in range(self.skill_num)]
+        nll = [-1 * d.log_prob(skill_emb).mean(dim=-1) for d in dist]
+        nll = torch.stack(nll, dim=-1)
+        return torch.sum(nll * skill_cls, dim=-1).mean()
 
     def act(
             self,
