@@ -7,9 +7,9 @@ datamodule/datasets=vision_lang_shm \
 ~callbacks/tsne_plot \
 model/action_decoder=skill \
 model.action_decoder.perceptual_emb_slice.0=0 \
-model.action_decoder.out_features=18 \
-model.action_decoder.sg_chk_path='./checkpoints/SKILL_GENERATOR_2022-12-04_09-41-58' \
+model.action_decoder.out_features=20 \
+model.action_decoder.sg_chk_path='./checkpoints/SKILL_GENERATOR_2022-12-26_11-24-31' \
 model/distribution=discrete \
 loss.kl_beta=0.0005 \
-loss.clip_auxiliary_loss_beta=0.01 \
-model.action_decoder.beta=0.0
+loss.clip_auxiliary_loss_beta=0.02 \
+model.action_decoder.beta=0.005 \
