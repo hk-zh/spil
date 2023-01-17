@@ -8,7 +8,8 @@ defaults:
 _recursive_: false
 
 skill_dim: 15
-skill_len: 5
+min_skill_len: 2
+max_skill_len: 5
 kl_beta: ${loss.kl_beta}
 kl_sigma: ${loss.kl_sigma}
 prior_seeking_balance: 0.8

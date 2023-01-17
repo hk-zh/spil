@@ -22,8 +22,25 @@ from skill_generator.datasets.utils.episode_utils import (
 hasher = pyhash.fnv1_32()
 logger = logging.getLogger(__name__)
 
+
 def load_npz(filename: Path) -> Dict[str, np.ndarray]:
     return np.load(filename.as_posix())
+
+
+def get_validation_window_size(idx: int, min_window_size: int, max_window_size: int) -> int:
+    """
+    In validation step, use hash function instead of random sampling for consistent window sizes across epochs.
+
+    Args:
+        idx: Sequence index.
+        min_window_size: Minimum window size.
+        max_window_size: Maximum window size.
+
+    Returns:
+        Window size computed with hash function.
+    """
+    window_range = max_window_size - min_window_size + 1
+    return min_window_size + hasher(str(idx)) % window_range
 
 
 class BaseDataset(Dataset):
@@ -45,18 +62,19 @@ class BaseDataset(Dataset):
     """
 
     def __init__(
-        self,
-        datasets_dir: Path,
-        obs_space: DictConfig,
-        proprio_state: DictConfig,
-        key: str,
-        num_workers: int,
-        save_format: str = 'npz',
-        transforms: Dict = {},
-        batch_size: int = 32,
-        window_size: int = 5,
-        pad: bool = True,
-        aux_lang_loss_window: int = 1,
+            self,
+            datasets_dir: Path,
+            obs_space: DictConfig,
+            proprio_state: DictConfig,
+            key: str,
+            num_workers: int,
+            save_format: str = 'npz',
+            transforms: Dict = {},
+            batch_size: int = 32,
+            max_window_size: int = 8,
+            min_window_size: int = 3,
+            pad: bool = True,
+            aux_lang_loss_window: int = 1,
     ):
         self.observation_space = obs_space
         self.proprio_state = proprio_state
@@ -67,7 +85,8 @@ class BaseDataset(Dataset):
         self.pad = pad
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.window_size = window_size
+        self.max_window_size = max_window_size
+        self.min_window_size = min_window_size
         self.abs_datasets_dir = datasets_dir
         self.aux_lang_loss_window = aux_lang_loss_window
         self.load_file = load_npz
@@ -99,10 +118,19 @@ class BaseDataset(Dataset):
         if isinstance(idx, int):
             # When max_ws_size and min_ws_size are equal, avoid unnecessary padding
             # acts like Constant dataset. Currently, used for language data
-            window_size = self.window_size
+            if self.min_window_size == self.max_window_size:
+                window_size = self.max_window_size
+            elif self.min_window_size < self.max_window_size:
+                window_size = self._get_window_size(idx)
+            else:
+                logger.error(f"min_window_size {self.min_window_size} > max_window_size {self.max_window_size}")
+                raise ValueError
         else:
             idx, window_size = idx
         sequence = self._get_sequences(idx, window_size)
+        if self.pad:
+            pad_size = self._get_pad_size(sequence)
+            sequence = self._pad_sequence(sequence, pad_size)
         return sequence
 
     def _get_sequences(self, idx: int, window_size: int) -> Dict:
@@ -120,7 +148,7 @@ class BaseDataset(Dataset):
         episode = self._load_episode(idx, window_size)
         seq_acts = process_actions(episode, self.observation_space, self.transforms)
         info = get_state_info_dict(episode)
-        seq_dict = {**seq_acts, **info, "idx": idx}  # type:ignore
+        seq_dict = {**seq_acts, **info, "idx": idx, "window_size": window_size}  # type:ignore
 
         return seq_dict
 
@@ -155,6 +183,38 @@ class BaseDataset(Dataset):
         episode = {key: np.stack([ep[key] for ep in episodes]) for key in keys}
         return episode
 
+    def _get_window_size(self, idx: int) -> int:
+        """
+        Sample a window size taking into account the episode limits.
+
+        Args:
+            idx: Index of the sequence to load.
+
+        Returns:
+            Window size.
+        """
+        window_diff = self.max_window_size - self.min_window_size
+        if len(self.episode_lookup) <= idx + window_diff:
+            # last episode
+            max_window = self.min_window_size + len(self.episode_lookup) - idx - 1
+        elif self.episode_lookup[idx + window_diff] != self.episode_lookup[idx] + window_diff:
+            # less than max_episode steps until next episode
+            steps_to_next_episode = int(
+                np.nonzero(
+                    self.episode_lookup[idx : idx + window_diff + 1]
+                    - (self.episode_lookup[idx] + np.arange(window_diff + 1))
+                )[0][0]
+            )
+            max_window = min(self.max_window_size, (self.min_window_size + steps_to_next_episode - 1))
+        else:
+            max_window = self.max_window_size
+
+        if self.validation:
+            # in validation step, repeat the window sizes for each epoch.
+            return get_validation_window_size(idx, self.min_window_size, max_window)
+        else:
+            return np.random.randint(self.min_window_size, max_window + 1)
+
     def _build_file_indices(self, abs_datasets_dir: Path) -> np.ndarray:
         """
         This method builds the mapping from index to file_name used for loading the episodes of the non language
@@ -173,8 +233,83 @@ class BaseDataset(Dataset):
         ep_start_end_ids = np.load(abs_datasets_dir / "ep_start_end_ids.npy")
         logger.info(f'Found "ep_start_end_ids.npy" with {len(ep_start_end_ids)} episodes.')
         for start_idx, end_idx in ep_start_end_ids:
-            assert end_idx > self.window_size
-            for idx in range(start_idx, end_idx + 1 - self.window_size):
+            assert end_idx > self.max_window_size
+            for idx in range(start_idx, end_idx + 1 - self.min_window_size):
                 episode_lookup.append(idx)
         return np.array(episode_lookup)
+
+    def _get_pad_size(self, sequence: Dict) -> int:
+        """
+        Determine how many frames to append to end of the sequence
+
+        Args:
+            sequence: Loaded sequence.
+
+        Returns:
+            Number of frames to pad.
+        """
+        return self.max_window_size - len(sequence["actions"])
+
+    def _pad_sequence(self, seq: Dict, pad_size: int) -> Dict:
+        """
+        Add stop sign to the end of a sequence and pad the sequence
+
+        Args:
+            seq: Sequence to pad.
+            pad_size: Number of frames to pad.
+
+        Returns:
+            Padded sequence.
+        """
+        if not self.relative_actions:
+            # repeat action for world coordinates action space
+            seq.update({"actions": self._pad_with_repetition(seq["actions"], pad_size)})
+        else:
+            # for relative actions zero pad all but the last action dims and repeat last action dim (gripper action)
+            seq_acts = torch.cat(
+                [
+                    self._pad_with_zeros(seq["actions"][..., :-1], pad_size),
+                    self._pad_with_repetition(seq["actions"][..., -1:], pad_size),
+                ],
+                dim=-1,
+            )
+            seq.update({"actions": seq_acts})
+        seq.update({"state_info": {k: self._pad_with_repetition(v, pad_size) for k, v in seq["state_info"].items()}})
+
+        return seq
+
+    @staticmethod
+    def _pad_with_repetition(input_tensor: torch.Tensor, pad_size: int) -> torch.Tensor:
+        """
+        Pad a sequence Tensor by repeating last element pad_size times.
+
+        Args:
+            input_tensor: Sequence to pad.
+            pad_size: Number of frames to pad.
+
+        Returns:
+            Padded Tensor.
+        """
+        last_repeated = torch.repeat_interleave(torch.unsqueeze(input_tensor[-1], dim=0), repeats=pad_size, dim=0)
+        padded = torch.vstack((input_tensor, last_repeated))
+        return padded
+
+    @staticmethod
+    def _pad_with_zeros(input_tensor: torch.Tensor, pad_size: int) -> torch.Tensor:
+        """
+        Pad a Tensor with zeros.
+
+        Args:
+            input_tensor: Sequence to pad.
+            pad_size: Number of frames to pad.
+
+        Returns:
+            Padded Tensor.
+        """
+        zeros_repeated = torch.repeat_interleave(
+            torch.unsqueeze(torch.zeros(input_tensor.shape[-1]), dim=0), repeats=pad_size, dim=0
+        )
+        padded = torch.vstack((input_tensor, zeros_repeated))
+        return padded
+
 

@@ -232,7 +232,7 @@ def rollout(env, model, task_oracle, args, subtask, lang_embeddings, val_annotat
             img = env.render(mode="rgb_array")
             join_vis_lang(img, lang_annotation)
             # time.sleep(3)
-            print('action: ', action)
+            # print('action: ', action)
         # check if current step solves a task
         current_task_info = task_oracle.get_task_info_for_set(start_info, current_info, {subtask})
         if len(current_task_info) > 0:

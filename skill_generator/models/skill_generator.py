@@ -23,7 +23,8 @@ class SkillGenerator(pl.LightningModule):
             kl_sigma: float,
             prior_seeking_balance: int,
             skill_dim: int,
-            skill_len: int,
+            min_skill_len: int,
+            max_skill_len: int,
             magic_scale: Tuple,
             prior_locator_weight: Tuple
     ):
@@ -33,7 +34,7 @@ class SkillGenerator(pl.LightningModule):
         self.prior_locator = hydra.utils.instantiate(prior_locator)
         self.optimizer_config = optimizer
         self.lr_scheduler = lr_scheduler
-        self.seq_l = torch.tensor(skill_len)
+        self.seq_l = torch.tensor(max_skill_len)
         self.kl_beta = kl_beta
         self.kl_sigma = kl_sigma
         self.balance = prior_seeking_balance
