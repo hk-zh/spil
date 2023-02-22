@@ -6,9 +6,9 @@ _recursive_: false
 env_cfg:
   _target_: hulc.wrappers.hulc_wrapper.HulcWrapper
 skip_epochs: 1
-rollout_freq: 4
+rollout_freq: 2
 num_videos: 8
-num_sequences: 500
+num_sequences: 512
 replan_freq: 30
 ep_len: 360
 empty_cache: false

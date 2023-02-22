@@ -1,6 +1,6 @@
 _target_: skill_generator.visualization.tsne_plot.TSNEPlot
 perplexity: 60
 n_jobs: 8
-plot_percentage: 0.06
+plot_percentage: 0.5
 opacity: 0.3
 marker_size: 5

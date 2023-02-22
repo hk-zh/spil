@@ -44,7 +44,7 @@ class SGDataModule(pl.LightningDataModule):
         train_dataset = hydra.utils.instantiate(
             self.datasets_cfg, datasets_dir=self.training_dir
         )
-        val_dataset = hydra.utils.instantiate(self.datasets_cfg, datasets_dir=self.val_dir, transforms=self.val_transforms)
+        val_dataset = hydra.utils.instantiate(self.datasets_cfg, datasets_dir=self.val_dir)
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
 
@@ -53,5 +53,5 @@ class SGDataModule(pl.LightningDataModule):
                           num_workers=self.train_dataset.num_workers, pin_memory=True)
 
     def val_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.train_dataset.batch_size,
-                          num_workers=self.train_dataset.num_workers, pin_memory=True)
+        return DataLoader(self.val_dataset, batch_size=self.val_dataset.batch_size,
+                          num_workers=self.val_dataset.num_workers, pin_memory=True)
