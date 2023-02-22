@@ -97,20 +97,21 @@ class SkillGenerator(pl.LightningModule):
         kl_loss_1 = D.kl_divergence(post_dist_detached, prior_dist)
         return balance * kl_loss_0 + (1-balance) * kl_loss_1
 
-    def skill_classifier(self, actions, eps=0.5):
+    def skill_classifier(self, actions, eps=0.05):
         gripper_energy = 0.
         _, T, _ = actions.shape
-        energy = torch.abs(torch.sum(actions[:, :, :6], dim=1))
+        energy = torch.sum(torch.abs(actions[:, :, :6]), dim=1)
         for i in range(T - 1):
             gripper_energy += abs(actions[:, i + 1, 6] - actions[:, i, 6])
 
         translation = torch.norm(energy[:, :3], dim=1)
         rotation = torch.norm(energy[:, 3:6], dim=1)
         gripper = gripper_energy
-        rotation[rotation < eps] = 0.
+
         translation /= self.scale[0]
         rotation /= self.scale[1]
         gripper /= self.scale[2]
+        rotation[rotation < eps] = -1.
 
         t = torch.stack([translation, rotation, gripper], dim=-1)
         B, _ = t.shape

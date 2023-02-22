@@ -6,6 +6,7 @@ defaults:
   - visual_goal: default
   - language_goal: default
   - action_decoder: hulc_default
+  - language_encoder: default
   - optimizer: adam
   - lr_scheduler: constant
   - bc_z_lang_decoder: none
