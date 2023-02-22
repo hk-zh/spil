@@ -12,11 +12,12 @@ from typing import Dict, Optional, Tuple
 import numpy as np
 from omegaconf import DictConfig
 from pytorch_lightning import Callback, LightningModule, Trainer
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from hulc.datasets.shm_dataset import ShmDataset
 from hulc.datasets.utils.episode_utils import lookup_naming_pattern
 
+import pdb
 log = logging.getLogger(__name__)
 
 
@@ -29,7 +30,7 @@ def gather_results(return_dict: Dict) -> Tuple[Dict, Dict]:
 
     Returns:
         episode_lookup_vision: Combined results of vision lookup.
-        lang_episode_dict: Combined results of lanugage lookup.
+        lang_episode_dict: Combined results of langauge lookup.
     """
     episode_lookup_vision: Dict = defaultdict(list)
     lang_episode_dict: Dict = defaultdict(dict)
@@ -104,7 +105,7 @@ class SharedMemoryLoader:
         self.min_window_size_lang = datasets_cfg.lang_dataset.min_window_size
         self.n_proc = 8
 
-    def _worker_process(self, proc_num, ep_start_end_ids, offsets, shmem, lang_ep_start_end_ids, return_dict):
+    def _worker_process(self, proc_num, ep_start_end_ids, offsets, shmem, lang_ep_start_end_ids, return_dict, lock):
         """
         Multiprocessing worker to speed up the loading of the data into shared memory.
 
@@ -118,12 +119,11 @@ class SharedMemoryLoader:
         """
         episode_lookup_vision = defaultdict(list)
         lang_episode_dict = defaultdict(dict)
-        if proc_num == 0:
-            pbar = tqdm(total=np.sum(np.diff(ep_start_end_ids)), leave=False)
-        else:
-            pbar = None
+        with lock:
+            pbar = tqdm(total=np.sum(np.diff(ep_start_end_ids)), leave=False, position=proc_num, desc=f"process {proc_num}")
+
         for i, (start_idx, end_idx) in enumerate(ep_start_end_ids):
-            seq = self._zip_sequence(start_idx, end_idx, pbar)
+            seq = self._zip_sequence(start_idx, end_idx, pbar=pbar, lock=lock)
             for key, array in seq.items():
                 shared_array = np.ndarray(array.shape, dtype=array.dtype, buffer=shmem[key].buf, offset=offsets[key])
                 shared_array[:] = array[:]
@@ -132,9 +132,10 @@ class SharedMemoryLoader:
                     episode_lookup_vision[key].append((offsets[key], j))
                     if idx in lang_ep_start_end_ids[:, 0]:
                         lang_episode_dict[key][idx] = (offsets[key], j)
+
                 offsets[key] += array.nbytes
         return_dict[proc_num] = episode_lookup_vision, lang_episode_dict
-        if pbar is not None:
+        with lock:
             pbar.close()
 
     def load_data_in_shared_memory(self):
@@ -160,7 +161,6 @@ class SharedMemoryLoader:
         episode_lookup_lang = defaultdict(list)
         log.info(
             f"Loading {self.dataset_type} language episodes into shared memory. "
-            f"(progress bar shows only worker process 0)."
         )
 
         if self.n_proc > len(ep_start_end_ids):
@@ -173,11 +173,12 @@ class SharedMemoryLoader:
         manager = multiprocessing.Manager()
         return_dict = manager.dict()
         processes = []
+        lock = multiprocessing.Manager().Lock()
         # load vision data with multiple processes
         for i in range(self.n_proc):
             p = multiprocessing.Process(
                 target=self._worker_process,
-                args=(i, split_indices[i], offsets[i], shmem, lang_ep_start_end_ids, return_dict),
+                args=(i, split_indices[i], offsets[i], shmem, lang_ep_start_end_ids, return_dict, lock),
             )
             processes.append(p)
             p.start()
@@ -263,7 +264,7 @@ class SharedMemoryLoader:
 
         return shmem, shapes, sizes, dtypes, None
 
-    def _zip_sequence(self, start_idx, end_idx, pbar=None):
+    def _zip_sequence(self, start_idx, end_idx, pbar=None, lock=None):
         """
         Load consecutive frames saved as individual files on disk and combine to episode dict.
 
@@ -289,8 +290,9 @@ class SharedMemoryLoader:
             with np.load(self._get_episode_name(file_idx)) as data:
                 for key in keys:
                     episode[key][i] = data[key]
-            if pbar is not None:
-                pbar.update(1)
+            if pbar is not None and lock is not None:
+                with lock:
+                    pbar.update(1)
         return episode
 
     def _get_episode_name(self, file_idx):
