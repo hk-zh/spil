@@ -138,8 +138,7 @@ class SkillDecoder(ActionDecoder):
         act_seq_len = perceptual_emb.shape[1]
         perceptual_emb = perceptual_emb[..., slice(*self.time_slice), slice(*self.perceptual_emb_slice)]
         batch_size, skill_seq_len = perceptual_emb.shape[0], perceptual_emb.shape[1]
-        latent_plan = latent_plan.unsqueeze(1).expand(-1, skill_seq_len,
-                                                      -1) if latent_plan.nelement() > 0 else latent_plan
+        latent_plan = latent_plan.unsqueeze(1).expand(-1, skill_seq_len, -1)
         latent_goal = latent_goal.unsqueeze(1).expand(-1, skill_seq_len, -1)
 
         skill_emb, hs_n = self._get_skill_emb(latent_plan, perceptual_emb, latent_goal, hs_0)
