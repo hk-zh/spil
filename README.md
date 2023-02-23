@@ -39,8 +39,8 @@ sh download_lang_embeddings.sh D | ABC | ABCD
 
 ### Pre-trained Models
 on the way...
-## Hardware Requirements
 
+## Hardware Requirements
 Trained with:
 - **GPU** - 1x NVIDIA Tesla V100 16GB
 - **RAM** - 256GB
@@ -89,6 +89,10 @@ You can instead specify the path to another checkpoint by adding this to the eva
 ## Acknowledgements
 
 This work uses code from the following open-source projects and datasets:
+
+#### HULC
+Original: [https://github.com/lukashermann/hulc](https://github.com/lukashermann/hulc)
+License: [MIT](https://github.com/mees/calvin/blob/main/LICENSE)
 
 #### CALVIN
 Original:  [https://github.com/mees/calvin](https://github.com/mees/calvin)
