@@ -145,3 +145,7 @@ dataset/calvin_debug_dataset/
 dataset/task*
 
 evaluation
+
+# runs
+hulc/run.sh
+skill_generator/run.sh
