@@ -295,7 +295,7 @@ class Hulc(pl.LightningModule):
         action_loss = self.action_decoder.loss(
             sampled_plan, perceptual_emb, latent_goal, train_acts, robot_obs, lang_emb=lang_emb
         )  # type:  ignore
-        kl_loss = torch.clip(self.compute_kl_loss(pp_state, pr_state), min=1e-8)
+        kl_loss = self.compute_kl_loss(pp_state, pr_state)
         total_loss = action_loss + kl_loss
 
         return kl_loss, action_loss, total_loss, pp_dist, pr_dist, seq_feat
@@ -368,7 +368,7 @@ class Hulc(pl.LightningModule):
             sample_act_pr[..., :-1], actions[..., :-1], reduction="none"
         )  # (batch, seq, 6)
         mae_pr = torch.mean(mae_pr, 1)  # (batch, 6)
-        kl_loss = torch.clip(self.compute_kl_loss(pp_state, pr_state), min=1e-8)
+        kl_loss = self.compute_kl_loss(pp_state, pr_state)
         # gripper action
         gripper_discrete_pr = sample_act_pr[..., -1]
         m = gripper_discrete_pr > 0
