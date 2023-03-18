@@ -12,7 +12,9 @@ num_layers: 2
 rnn_model: rnn_decoder
 skill_len: 5
 sg_chk_path: './checkpoints/SKILL_GENERATOR'
-beta: 0.01
+gamma_1: 0.005
+gamma_2: 0.001
+base_skill_prior: [0.6, 0.2, 0.2]
 perceptual_emb_slice: [64, 128]
 skill_num: 3
 gripper_control: true
