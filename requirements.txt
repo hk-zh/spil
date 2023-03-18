@@ -1,4 +1,4 @@
-setuptools==57.5.0
+setuptools
 cmake==3.18.4
 wheel
 numpy>1.2
@@ -22,7 +22,7 @@ gym~=0.26.2
 moviepy
 tqdm~=4.64.1
 termcolor~=2.0.1
-wandb~=0.13.9
+wandb~=0.12.4
 
 regex~=2022.9.13
 Pillow~=9.2.0
