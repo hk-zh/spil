@@ -206,7 +206,7 @@ class SkillDecoder(ActionDecoder):
         Returns:
             categorical_reg_loss: the loss to regularize the base skill selection.
         """
-        return torch.sum(skill_cls * torch.log(skill_cls / self.base_skill_prior[None, None, :]))
+        return torch.sum(skill_cls * torch.log(skill_cls / self.base_skill_prior[None, None, :].to(skill_cls)))
 
     def act(
             self,
@@ -284,7 +284,7 @@ class SkillDecoder(ActionDecoder):
         )
         pred_actions = self._action_generation(skill_emb, act_seq_len)
         if skill_cls is not None:
-            base_skill_reg_loss = self._reg_loss(skill_emb, skill_cls)
+            base_skill_reg_loss = self._base_skill_reg_loss(skill_emb, skill_cls)
             categorical_reg_loss = self._categorical_reg_loss(skill_cls)
         else:
             base_skill_reg_loss = 0.
@@ -316,7 +316,7 @@ class SkillDecoder(ActionDecoder):
         )
         pred_actions = self._action_generation(skill_emb, act_seq_len)
         if skill_cls is not None:
-            base_skill_reg_loss = self._reg_loss(skill_emb, skill_cls)
+            base_skill_reg_loss = self._base_skill_reg_loss(skill_emb, skill_cls)
             categorical_reg_loss = self._categorical_reg_loss(skill_cls)
         else:
             base_skill_reg_loss = 0.
