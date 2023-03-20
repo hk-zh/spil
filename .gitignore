@@ -147,5 +147,5 @@ dataset/task*
 evaluation
 
 # runs
-hulc/run.sh
-skill_generator/run.sh
+hulc/*.sh
+skill_generator/*.sh
