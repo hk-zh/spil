@@ -206,7 +206,7 @@ class SkillDecoder(ActionDecoder):
         Returns:
             categorical_reg_loss: the loss to regularize the base skill selection.
         """
-        return torch.sum(skill_cls * torch.log(skill_cls / self.base_skill_prior[None, None, :].to(skill_cls)))
+        return torch.mean(skill_cls * torch.log(skill_cls / self.base_skill_prior[None, None, :].to(skill_cls)))
 
     def act(
             self,
