@@ -198,7 +198,8 @@ class SkillDecoder(ActionDecoder):
 
     def _categorical_reg_loss(
             self,
-            skill_cls: torch.Tensor
+            skill_cls: torch.Tensor,
+            eps: float = 1e-6
     ):
         """
         Args:
@@ -206,6 +207,7 @@ class SkillDecoder(ActionDecoder):
         Returns:
             categorical_reg_loss: the loss to regularize the base skill selection.
         """
+        skill_cls = torch.clip(skill_cls, min=eps)
         return torch.sum(skill_cls * torch.log(skill_cls / self.base_skill_prior[None, None, :].to(skill_cls)), dim=-1).mean()
 
     def act(
@@ -295,9 +297,11 @@ class SkillDecoder(ActionDecoder):
             loss = self._loss(pred_actions, actions_tcp)
             pred_actions_world = tcp_to_world_frame(pred_actions, robot_obs)
             return loss + self.gamma_1 * base_skill_reg_loss + self.gamma_2 * categorical_reg_loss, pred_actions_world
+            # return loss + self.gamma_1 * base_skill_reg_loss, pred_actions_world
         else:
             loss = self._loss(pred_actions, actions)
             return loss + self.gamma_1 * base_skill_reg_loss + self.gamma_2 * categorical_reg_loss, pred_actions
+            # return loss + self.gamma_1 * base_skill_reg_loss, pred_actions
 
     def loss(
             self,
