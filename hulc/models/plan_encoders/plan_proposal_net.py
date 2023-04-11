@@ -42,7 +42,7 @@ class PlanProposalNetwork(nn.Module):
     def forward(self, initial_percep_emb: torch.Tensor, latent_goal: torch.Tensor) -> State:
         x = torch.cat([initial_percep_emb, latent_goal], dim=-1)
         x = self.fc_model(x)
-        x = torch.nan_to_num(x)
+        # x = torch.nan_to_num(x)
         my_state = self.fc_state(x)
         state = self.dist.forward_dist(my_state)
         return state

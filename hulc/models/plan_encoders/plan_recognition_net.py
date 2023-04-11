@@ -111,7 +111,7 @@ class PlanRecognitionTransformersNetwork(nn.Module):
         x = self.transformer_encoder(x)
         x = self.fc(x.permute(1, 0, 2))
         x = torch.mean(x, dim=1)  # gather all the sequence info
-        x = torch.nan_to_num(x)
+        # x = torch.nan_to_num(x)
         my_state = self.fc_state(x)
         state = self.dist.forward_dist(my_state)
         return state, x
