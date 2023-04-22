@@ -1,2 +1,2 @@
-_target_: hulc.models.perceptual_encoders.proprio_encoder.IdentityEncoder
+_target_: spil.models.perceptual_encoders.proprio_encoder.IdentityEncoder
 proprioception_dims: ${datamodule.proprioception_dims}

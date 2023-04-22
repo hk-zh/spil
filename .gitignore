@@ -138,6 +138,7 @@ sg_runs
 # nohups
 nohup*.out
 
+checkpoints/SPIL*
 checkpoints/HULC*
 checkpoints/SKILL_GENERATOR*
 
@@ -147,5 +148,5 @@ dataset/task*
 evaluation
 
 # runs
-hulc/*.sh
+spil/*.sh
 skill_generator/*.sh

@@ -1,4 +1,4 @@
-_target_: hulc.models.plan_encoders.plan_recognition_net.PlanRecognitionTransformersNetwork
+_target_: spil.models.plan_encoders.plan_recognition_net.PlanRecognitionTransformersNetwork
 num_heads: 8
 num_layers: 2
 encoder_hidden_size: 2048

@@ -1,4 +1,4 @@
-_target_: hulc.models.decoders.deterministic_decoder.DeterministicDecoder
+_target_: spil.models.decoders.deterministic_decoder.DeterministicDecoder
 hidden_size: 2048
 out_features: ${datamodule.action_space}
 policy_rnn_dropout_p: 0.0

@@ -2,14 +2,14 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[<b>Skill Priors to Increase Generalisation Abilities for Language-Conditioned Robot Manipulation under Unstructured Data</b>](https://arxiv.org/pdf/2204.06252.pdf)
+[<b>Skill Priors to Increase Generalisation Abilities for Language-Conditioned Robot Manipulation under Unstructured Data</b>](https://)
 
-![](media/hulc_rollout.gif)
+![](media/spil_rollout.gif)
 ## Installation
 To begin, clone this repository locally
 ```bash
 git clone --recurse-submodules https://github.com/Hongkuan-Zhou/spil
-export ROOT=$(pwd)/hulc
+export ROOT=$(pwd)/spil
 
 ```
 Install requirements:
@@ -49,7 +49,7 @@ Trained with:
 ## Training
 To train the model with the maximum amount of available GPUS, run:
 ```
-python hulc/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm
 ```
 The `vision_lang_shm` option loads the CALVIN dataset into shared memory at the beginning of the training,
 speeding up the data loading during training.
@@ -62,13 +62,13 @@ For an additional speed up, you can disable the evaluation callbacks during trai
 ### Ablations
 Multi-context imitation learning (MCIL), (Lynch et al., 2019):
 ```
-python hulc/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm model=mcil
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm model=mcil
 datamodule=mcil
 ```
 
 Goal-conditioned behavior cloning (GCBC), (Lynch et al., 2019):
 ```
-python hulc/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm model=gcbc
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm model=gcbc
 ~callbacks/tsne_plot
 ```
 
@@ -76,9 +76,9 @@ python hulc/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset
 ## Evaluation
 See detailed inference instructions on the [CALVIN repo](https://github.com/mees/calvin#muscle-evaluation-the-calvin-challenge).
 ```
-python hulc/evaluation/evaluate_policy.py --dataset_path <PATH/TO/DATASET> --train_folder <PATH/TO/TRAINING/FOLDER>
+python spil/evaluation/evaluate_policy.py --dataset_path <PATH/TO/DATASET> --train_folder <PATH/TO/TRAINING/FOLDER>
 ```
-Set `--train_folder $HULC_ROOT/checkpoints/HULC_D_D` to evaluate our [pre-trained models](#pre-trained-models).
+Set `--train_folder $SPIL_ROOT/checkpoints/HULC_D_D` to evaluate our [pre-trained models](#pre-trained-models).
 
 Optional arguments:
 
@@ -90,7 +90,7 @@ You can instead specify the path to another checkpoint by adding this to the eva
 
 This work uses code from the following open-source projects and datasets:
 
-#### HULC
+#### SPIL
 Original: [https://github.com/lukashermann/hulc](https://github.com/lukashermann/hulc)
 License: [MIT](https://github.com/mees/calvin/blob/main/LICENSE)
 

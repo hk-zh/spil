@@ -3,6 +3,6 @@ save_dir: .
 name: play_lmp
 group: play_lmp
 log_model: false
-project: "hulc"
+project: "spil"
 entity: "zhking"
 id: ???

@@ -14,7 +14,7 @@ defaults:
   - proj_vis_lang: default
   - /annotations@val_instructions: new_playtable_validation
 
-_target_: hulc.models.gcbc.GCBC
+_target_: spil.models.gcbc.GCBC
 _recursive_: false
 
 kl_beta: ${loss.kl_beta}

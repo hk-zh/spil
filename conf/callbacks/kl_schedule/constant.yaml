@@ -1,1 +1,1 @@
-_target_: hulc.utils.kl_callbacks.KLConstantSchedule
+_target_: spil.utils.kl_callbacks.KLConstantSchedule

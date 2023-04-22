@@ -1,9 +1,9 @@
 defaults:
   - tasks: new_playtable_tasks
-_target_: hulc.rollout.rollout.Rollout
+_target_: spil.rollout.rollout.Rollout
 _recursive_: false
 env_cfg:
-  _target_: hulc.wrappers.hulc_wrapper.HulcWrapper
+  _target_: spil.wrappers.spil_wrapper.SpilWrapper
 skip_epochs: 1
 rollout_freq: 5
 video: true

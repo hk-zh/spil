@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Setup hulc installation."""
+"""Setup spil installation."""
 
 from os import path as op
 import re
@@ -12,7 +12,7 @@ def _read(f):
     return open(op.join(op.dirname(__file__), f)).read() if op.exists(f) else ""
 
 
-_meta = _read("hulc/__init__.py")
+_meta = _read("spil/__init__.py")
 
 
 def find_meta(_meta, string):
@@ -35,7 +35,7 @@ meta = dict(
     keywords="pytorch Lfp".split(),
     author=find_meta(_meta, "__author__"),
     author_email=find_meta(_meta, "__email__"),
-    url=" https://github.com/mees/hulc",
+    url="https://github.com/Hongkuan-Zhou/spil",
     packages=find_packages(exclude=["tests"]),
     install_requires=install_requires,
 )

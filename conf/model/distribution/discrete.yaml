@@ -1,4 +1,4 @@
-_target_: hulc.utils.distributions.Distribution
+_target_: spil.utils.distributions.Distribution
 dist: "discrete"
 category_size: 32
 class_size: 32

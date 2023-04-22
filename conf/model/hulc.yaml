@@ -6,7 +6,7 @@ defaults:
   - visual_goal: default
   - language_goal: default
   - language_encoder: default
-  - action_decoder: skill
+  - action_decoder: hulc_default
   - optimizer: adam
   - lr_scheduler: constant
   - bc_z_lang_decoder: none
@@ -14,7 +14,7 @@ defaults:
   - proj_vis_lang: default
   - /annotations@val_instructions: new_playtable_validation
 
-_target_: hulc.models.hulc.Hulc
+_target_: spil.models.spil.Spil
 _recursive_: false
 
 kl_beta: ${loss.kl_beta}
