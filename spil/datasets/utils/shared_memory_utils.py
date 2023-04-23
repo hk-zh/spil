@@ -103,7 +103,7 @@ class SharedMemoryLoader:
         self.naming_pattern, self.n_digits = lookup_naming_pattern(self.dataset_dir, "npz")
         self.min_window_size_vision = datasets_cfg.vision_dataset.min_window_size
         self.min_window_size_lang = datasets_cfg.lang_dataset.min_window_size
-        self.n_proc = 8
+        self.n_proc = 16
 
     def _worker_process(self, proc_num, ep_start_end_ids, offsets, shmem, lang_ep_start_end_ids, return_dict, lock):
         """
