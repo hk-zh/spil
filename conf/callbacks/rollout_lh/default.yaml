@@ -8,7 +8,7 @@ env_cfg:
 skip_epochs: 1
 rollout_freq: 2
 num_videos: 8
-num_sequences: 512
+num_sequences: 1000
 replan_freq: 30
 ep_len: 360
 empty_cache: false

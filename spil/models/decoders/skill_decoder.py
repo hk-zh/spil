@@ -199,7 +199,7 @@ class SkillDecoder(ActionDecoder):
     def _categorical_reg_loss(
             self,
             skill_cls: torch.Tensor,
-            eps: float = 1e-6
+            eps: float = 1e-7
     ):
         """
         Args:

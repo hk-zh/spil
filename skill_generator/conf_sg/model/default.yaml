@@ -13,5 +13,5 @@ max_skill_len: 5
 kl_beta: ${loss.kl_beta}
 kl_sigma: ${loss.kl_sigma}
 prior_seeking_balance: 0.8
-magic_scale: [1.4, 3.0, 0.75]
+magic_scale: [1.4, 3.5, 0.75]
 prior_locator_weight: [0.16, 0.48, 0.36]

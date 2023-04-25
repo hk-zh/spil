@@ -145,8 +145,7 @@ checkpoints/SKILL_GENERATOR*
 dataset/calvin_debug_dataset/
 dataset/task*
 
-evaluation
 
 # runs
 spil/*.sh
-skill_generator/*.sh
+skill_generator/skill_generator/*.sh

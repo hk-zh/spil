@@ -1,6 +1,5 @@
 defaults:
   - datasets: default
-  - transforms: rand_shift
   - proprioception_dims: robot_no_joints #robot_full
   - observation_space: rel_acts
 _target_: skill_generator.datasets.sg_data_module.SGDataModule
