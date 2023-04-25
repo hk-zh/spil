@@ -1,6 +1,6 @@
 _target_: spil.datasets.shm_dataset.ShmDataset
 key: "lang"
-batch_size: 32
+batch_size: 64
 min_window_size: 20
 max_window_size: 32
 proprio_state: ${datamodule.proprioception_dims}
