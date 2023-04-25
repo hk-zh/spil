@@ -6,8 +6,8 @@ train:
       pad: 10
     - _target_: spil.utils.transforms.ScaleImageTensor
     - _target_: torchvision.transforms.Normalize
-      mean: [0.5,]
-      std: [0.5,]
+      mean: [0.48145466, 0.4578275, 0.40821073]
+      std: [0.26862954, 0.26130258, 0.27577711]
 #    - _target_: spil.utils.transforms.AddGaussianNoise
 #      mean: [0.0]
 #      std: [0.01]
@@ -18,8 +18,8 @@ train:
       pad: 4
     - _target_: spil.utils.transforms.ScaleImageTensor
     - _target_: torchvision.transforms.Normalize
-      mean: [0.5,]
-      std: [0.5,]
+      mean: [0.48145466, 0.4578275, 0.40821073]
+      std: [0.26862954, 0.26130258, 0.27577711]
 #    - _target_: spil.utils.transforms.AddGaussianNoise
 #      mean: [0.0]
 #      std: [0.01]
@@ -84,15 +84,15 @@ val:
       size: 200
     - _target_: spil.utils.transforms.ScaleImageTensor
     - _target_: torchvision.transforms.Normalize
-      mean: [0.5,]
-      std: [0.5,]
+      mean: [0.48145466, 0.4578275, 0.40821073]
+      std: [0.26862954, 0.26130258, 0.27577711]
   rgb_gripper:
     - _target_: torchvision.transforms.Resize
       size: 84
     - _target_: spil.utils.transforms.ScaleImageTensor
     - _target_: torchvision.transforms.Normalize
-      mean: [0.5,]
-      std: [0.5,]
+      mean: [0.48145466, 0.4578275, 0.40821073]
+      std: [0.26862954, 0.26130258, 0.27577711]
   depth_static:
     - _target_: torchvision.transforms.Resize
       size: 200

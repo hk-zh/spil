@@ -20,7 +20,9 @@ flatten_list_of_dicts = lambda t: {k: v for d in t for k, v in d.items()}
 
 
 def _unnormalize(img):
-    return img / 2 + 0.5
+    mean = torch.tensor([0.48145466, 0.4578275, 0.40821073]).to(img)[None, None, :, None, None]
+    std = torch.tensor([0.26862954, 0.26130258, 0.27577711]).to(img)[None, None, :, None, None]
+    return img * std + mean
 
 
 def delete_tmp_video(path):
