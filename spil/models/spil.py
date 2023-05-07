@@ -566,6 +566,7 @@ class Spil(pl.LightningModule):
         alpha = self.kl_balancing_mix
         kl_loss = alpha * kl_lhs + (1 - alpha) * kl_rhs
         kl_loss_scaled = kl_loss * self.kl_beta
+        torch.nan_to_num(kl_loss_scaled)
         return kl_loss_scaled
 
     def set_kl_beta(self, kl_beta):

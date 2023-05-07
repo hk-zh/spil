@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 from .action_decoder import ActionDecoder
 import skill_generator.models.skill_generator as model_sg
 from typing import Optional, Tuple
@@ -13,6 +14,7 @@ from torch.distributions import Normal
 from collections import deque
 from spil.models.decoders.utils.rnn import gru_decoder, lstm_decoder, mlp_decoder, rnn_decoder  # needed for line 60
 
+logger = logging.getLogger(__name__)
 
 class SkillDecoder(ActionDecoder):
     def __init__(
@@ -71,11 +73,10 @@ class SkillDecoder(ActionDecoder):
 
     def _load_checkpoint(self):
         """
-
         load the checkpoint of skill generator. Here, we need the model action_decoder and prior_locator module in the skill generator
-
         """
         chk = get_last_checkpoint(self.sg_chk_path)
+        logger.info(f'load from skill generator checkpoint {chk}')
         if chk is not None:
             self.skill_generator = getattr(model_sg, 'SkillGenerator').load_from_checkpoint(chk.as_posix())
         self.skill_generator.freeze()
