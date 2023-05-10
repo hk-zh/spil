@@ -1,7 +1,7 @@
 _target_: spil.models.decoders.skill_decoder.SkillDecoder
 hidden_size: 2048
 hidden_size2: 512
-out_features: 10
+out_features: 20
 policy_rnn_dropout_p: 0.0
 latent_goal_features: ${model.visual_goal.latent_goal_features}
 perceptual_features: ???
@@ -12,9 +12,9 @@ num_layers: 2
 rnn_model: rnn_decoder
 skill_len: 5
 sg_chk_path: './checkpoints/SKILL_GENERATOR'
-gamma_1: 0.005
-gamma_2: 0.001
+gamma_1: 0.002
+gamma_2: 0.0001
 base_skill_prior: [0.7, 0.1, 0.2]
-perceptual_emb_slice: [64, 128]
+perceptual_emb_slice: [0, 128]
 skill_num: 3
 gripper_control: true
