@@ -1,4 +1,4 @@
-_target_: hulc.models.perceptual_encoders.vision_network_gripper.VisionNetwork
+_target_: spil.models.perceptual_encoders.vision_network_gripper.VisionNetwork
 input_width: 84
 input_height: 84
 activation_function: ReLU #ELU

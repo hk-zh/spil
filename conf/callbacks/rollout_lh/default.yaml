@@ -1,14 +1,14 @@
 defaults:
   - /callbacks/rollout/tasks@tasks: new_playtable_tasks
   - /annotations@val_annotations: new_playtable_validation
-_target_: hulc.rollout.rollout_long_horizon.RolloutLongHorizon
+_target_: spil.rollout.rollout_long_horizon.RolloutLongHorizon
 _recursive_: false
 env_cfg:
-  _target_: hulc.wrappers.hulc_wrapper.HulcWrapper
+  _target_: spil.wrappers.spil_wrapper.SpilWrapper
 skip_epochs: 1
 rollout_freq: 2
 num_videos: 8
-num_sequences: 512
+num_sequences: 1000
 replan_freq: 30
 ep_len: 360
 empty_cache: false

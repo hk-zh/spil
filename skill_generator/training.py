@@ -12,7 +12,7 @@ from pytorch_lightning import Callback, LightningModule, seed_everything, Traine
 from pytorch_lightning.utilities import rank_zero_only
 from pytorch_lightning.loggers import LightningLoggerBase
 from pytorch_lightning.callbacks import LearningRateMonitor
-from hulc.utils.utils import (
+from spil.utils.utils import (
     get_git_commit_hash,
     get_last_checkpoint,
     initialize_pretrained_weights,

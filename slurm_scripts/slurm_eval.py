@@ -4,7 +4,7 @@ import sys
 
 import numpy as np
 
-from hulc.utils.utils import get_all_checkpoints
+from spil.utils.utils import get_all_checkpoints
 
 
 def main():

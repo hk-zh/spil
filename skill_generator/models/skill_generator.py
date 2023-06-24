@@ -7,7 +7,7 @@ from typing import Any, Dict, NamedTuple, Optional, Tuple, Union
 import torch.distributions as D
 
 from skill_generator.utils.distributions import State, ContState, Distribution
-from hulc.models.decoders.utils.gripper_control import tcp_to_world_frame, world_to_tcp_frame
+from spil.models.decoders.utils.gripper_control import tcp_to_world_frame, world_to_tcp_frame
 import torch.nn.functional as F
 
 

@@ -1,2 +1,2 @@
-_target_: hulc.models.encoders.language_network.SBert
+_target_: spil.models.encoders.language_network.SBert
 nlp_model: "all-MiniLM-L6-v2"

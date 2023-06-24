@@ -1,4 +1,4 @@
-_target_: hulc.models.encoders.lang_encoder.LanguageEncoder
+_target_: spil.models.encoders.lang_encoder.LanguageEncoder
 language_features: 384
 hidden_size: 2048
 out_features: 256

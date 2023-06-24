@@ -1,4 +1,4 @@
-_target_: hulc.models.decoders.skill_decoder.SkillDecoder
+_target_: spil.models.decoders.skill_decoder.SkillDecoder
 hidden_size: 2048
 hidden_size2: 512
 out_features: 10
@@ -13,6 +13,6 @@ rnn_model: rnn_decoder
 skill_len: 5
 sg_chk_path: './checkpoints/SKILL_GENERATOR'
 beta: 0.01
-perceptual_emb_slice: [64, 128]
+perceptual_emb_slice: [0, 128]
 skill_num: 3
 gripper_control: true
