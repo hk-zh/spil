@@ -1,15 +1,16 @@
-# PSIL
+# SPIL
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[<b>Skill Priors to Increase Generalisation Abilities for Language-Conditioned Robot Manipulation under Unstructured Data</b>](https://arxiv.org/pdf/2204.06252.pdf)
+[<b>Language-Conditioned Robot Manipulation With Base Skill Priors Under Unstructured Data</b>](https://)
 
-![](media/hulc_rollout.gif)
+![SPIL](https://github.com/Hongkuan-Zhou/spil/assets/57254021/0e205350-4b50-4413-8792-b60d08c590d6)
+
 ## Installation
 To begin, clone this repository locally
 ```bash
 git clone --recurse-submodules https://github.com/Hongkuan-Zhou/spil
-export ROOT=$(pwd)/hulc
+export ROOT=$(pwd)/spil
 
 ```
 Install requirements:
@@ -39,8 +40,8 @@ sh download_lang_embeddings.sh D | ABC | ABCD
 
 ### Pre-trained Models
 on the way...
-## Hardware Requirements
 
+## Hardware Requirements
 Trained with:
 - **GPU** - 1x NVIDIA Tesla V100 16GB
 - **RAM** - 256GB
@@ -49,46 +50,59 @@ Trained with:
 ## Training
 To train the model with the maximum amount of available GPUS, run:
 ```
-python hulc/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm
 ```
 The `vision_lang_shm` option loads the CALVIN dataset into shared memory at the beginning of the training,
 speeding up the data loading during training.
 The preparation of the shared memory cache will take some time
 (approx. 20 min at our SLURM cluster). \
 If you want to use the original data loader (e.g. for debugging) just override the command with `datamodule/datasets=vision_lang`. \
-For an additional speed up, you can disable the evaluation callbacks during training by adding `~callbacks/rollout` and `~callbacks/rollout_lh`
+For an additional speed up, you can disable the evaluation callbacks during training by adding `~callbacks/rollout_lh`
 
 
 ### Ablations
+Hierarchical Universal Language Conditioned Policies (HULC), (Oier et al. 2022)
+```
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm model=mcil
+datamodule=hulc loss=hulc
+```
+
 Multi-context imitation learning (MCIL), (Lynch et al., 2019):
 ```
-python hulc/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm model=mcil
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm model=mcil
 datamodule=mcil
 ```
 
 Goal-conditioned behavior cloning (GCBC), (Lynch et al., 2019):
 ```
-python hulc/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm model=gcbc
-~callbacks/tsne_plot
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm model=gcbc
 ```
 
 
 ## Evaluation
 See detailed inference instructions on the [CALVIN repo](https://github.com/mees/calvin#muscle-evaluation-the-calvin-challenge).
 ```
-python hulc/evaluation/evaluate_policy.py --dataset_path <PATH/TO/DATASET> --train_folder <PATH/TO/TRAINING/FOLDER>
+python spil/evaluation/evaluate_policy.py --dataset_path <PATH/TO/DATASET> --train_folder <PATH/TO/TRAINING/FOLDER>
 ```
-Set `--train_folder $HULC_ROOT/checkpoints/HULC_D_D` to evaluate our [pre-trained models](#pre-trained-models).
 
 Optional arguments:
 
 - `--checkpoint <PATH/TO/CHECKPOINT>`: by default, the evaluation loads the last checkpoint in the training log directory.
 You can instead specify the path to another checkpoint by adding this to the evaluation command.
 - `--debug`: print debug information and visualize environment.
+## Real-world Experiments
+
+
+https://github.com/Hongkuan-Zhou/spil/assets/57254021/5e2df33f-7446-4113-8967-39109b7ffb09
+
 
 ## Acknowledgements
 
 This work uses code from the following open-source projects and datasets:
+
+#### HULC
+Original: [https://github.com/lukashermann/hulc](https://github.com/lukashermann/hulc)
+License: [MIT](https://github.com/mees/calvin/blob/main/LICENSE)
 
 #### CALVIN
 Original:  [https://github.com/mees/calvin](https://github.com/mees/calvin)
