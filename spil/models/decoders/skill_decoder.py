@@ -33,7 +33,9 @@ class SkillDecoder(ActionDecoder):
             sg_chk_path: str,
             skill_len: int,
             skill_num: int,
-            beta: float,
+            gamma_1: float,
+            gamma_2: float,
+            base_skill_prior: list
     ):
         super(SkillDecoder, self).__init__()
         self.plan_features = plan_features
@@ -61,7 +63,9 @@ class SkillDecoder(ActionDecoder):
             self.sg_chk_path = Path(spil.__file__).parent.parent / self.sg_chk_path
 
         self.skill_len = torch.tensor(skill_len)
-        self.beta = beta
+        self.gamma_1 = gamma_1
+        self.gamma_2 = gamma_2
+        self.base_skill_prior = torch.tensor(base_skill_prior)
         self.cached_actions = deque([])
         self._load_checkpoint()
 
@@ -172,7 +176,7 @@ class SkillDecoder(ActionDecoder):
             pred_actions = pred_actions[:, :act_seq_len, :]
         return pred_actions
 
-    def _reg_loss(
+    def _base_skill_reg_loss(
             self,
             skill_emb: torch.Tensor,
             skill_cls: torch.Tensor,
@@ -192,6 +196,20 @@ class SkillDecoder(ActionDecoder):
         nll = [-1 * d.log_prob(skill_emb).mean(dim=-1) for d in dist]
         nll = torch.stack(nll, dim=-1)
         return torch.sum(nll * skill_cls, dim=-1).mean()
+
+    def _categorical_reg_loss(
+            self,
+            skill_cls: torch.Tensor,
+            eps: float = 1e-6
+    ):
+        """
+        Args:
+            skill_cls: the skill labelling results with the shape of (B, T, 3)
+        Returns:
+            categorical_reg_loss: the loss to regularize the base skill selection.
+        """
+        skill_cls = torch.clip(skill_cls, min=eps)
+        return torch.sum(skill_cls * torch.log(skill_cls / self.base_skill_prior[None, None, :].to(skill_cls)), dim=-1).mean()
 
     def act(
             self,
@@ -269,18 +287,20 @@ class SkillDecoder(ActionDecoder):
         )
         pred_actions = self._action_generation(skill_emb, act_seq_len)
         if skill_cls is not None:
-            reg_loss = self._reg_loss(skill_emb, skill_cls)
+            base_skill_reg_loss = self._base_skill_reg_loss(skill_emb, skill_cls)
+            categorical_reg_loss = self._categorical_reg_loss(skill_cls)
         else:
-            reg_loss = 0.
+            base_skill_reg_loss = 0.
+            categorical_reg_loss = 0.
         # loss
         if self.gripper_control:
             actions_tcp = world_to_tcp_frame(actions, robot_obs)
             loss = self._loss(pred_actions, actions_tcp)
             pred_actions_world = tcp_to_world_frame(pred_actions, robot_obs)
-            return loss + self.beta * reg_loss, pred_actions_world
+            return loss + self.gamma_1 * base_skill_reg_loss + self.gamma_2 * categorical_reg_loss, pred_actions_world
         else:
             loss = self._loss(pred_actions, actions)
-            return loss + self.beta * reg_loss, pred_actions
+            return loss + self.gamma_1 * base_skill_reg_loss + self.gamma_2 * categorical_reg_loss, pred_actions
 
     def loss(
             self,
@@ -299,13 +319,15 @@ class SkillDecoder(ActionDecoder):
         )
         pred_actions = self._action_generation(skill_emb, act_seq_len)
         if skill_cls is not None:
-            reg_loss = self._reg_loss(skill_emb, skill_cls)
+            base_skill_reg_loss = self._base_skill_reg_loss(skill_emb, skill_cls)
+            categorical_reg_loss = self._categorical_reg_loss(skill_cls)
         else:
-            reg_loss = 0.
+            base_skill_reg_loss = 0.
+            categorical_reg_loss = 0.
         if self.gripper_control:
             actions_tcp = world_to_tcp_frame(actions, robot_obs)
             loss = self._loss(pred_actions, actions_tcp)
-            return loss + self.beta * reg_loss
+            return loss + self.gamma_1 * base_skill_reg_loss + self.gamma_2 * categorical_reg_loss
         else:
             loss = self._loss(pred_actions, actions)
-            return loss + self.beta * reg_loss
+            return loss + self.gamma_1 * base_skill_reg_loss + self.gamma_2 * categorical_reg_loss
