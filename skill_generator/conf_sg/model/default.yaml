@@ -7,7 +7,7 @@ defaults:
   - lr_scheduler: constant
 _recursive_: false
 
-skill_dim: 15
+skill_dim: 20
 min_skill_len: 2
 max_skill_len: 5
 kl_beta: ${loss.kl_beta}

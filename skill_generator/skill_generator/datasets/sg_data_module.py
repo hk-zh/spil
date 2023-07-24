@@ -28,7 +28,7 @@ class SGDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         root_data_path = Path(root_data_dir)
         if not root_data_path.is_absolute():
-            root_data_path = Path(skill_generator.__file__).parent.parent / root_data_path
+            root_data_path = Path(skill_generator.__file__).parent.parent.parent / root_data_path
         self.training_dir = root_data_path / "training"
         self.val_dir = root_data_path / "validation"
         self.shuffle_val = shuffle_val

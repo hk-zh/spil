@@ -1,6 +1,6 @@
 _target_: skill_generator.datasets.base_dataset.BaseDataset
 key: "acts"
-batch_size: 64
+batch_size: 256
 max_window_size: ${model.max_skill_len}
 min_window_size: ${model.min_skill_len}
 proprio_state: ${datamodule.proprioception_dims}

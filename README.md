@@ -48,17 +48,26 @@ Trained with:
 - **OS** - Ubuntu 20.04
 
 ## Training
-To train the model with the maximum amount of available GPUS, run:
+### SPIL model
+To train the spil model with the maximum amount of available GPUS, run:
 ```
-python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset datamodule/datasets=vision_lang_shm
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset model.action_decoder.sg_chk_path=path/to/skill_generator datamodule/datasets=vision_lang
 ```
-The `vision_lang_shm` option loads the CALVIN dataset into shared memory at the beginning of the training,
+To accelerate training process, the dataset can be first loaded into shared memory. (Note this way requires more RAM, please make sure your server has enough RAM)
+```
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset model.action_decoder.sg_chk_path=path/to/skill_generator datamodule/datasets=vision_lang_shm
+```
+- The `vision_lang_shm` option loads the CALVIN dataset into shared memory at the beginning of the training,
 speeding up the data loading during training.
 The preparation of the shared memory cache will take some time
-(approx. 20 min at our SLURM cluster). \
-If you want to use the original data loader (e.g. for debugging) just override the command with `datamodule/datasets=vision_lang`. \
-For an additional speed up, you can disable the evaluation callbacks during training by adding `~callbacks/rollout_lh`
+(approx. 20 min at our SLURM cluster). 
+- You can either use the following command to train the `skill-generator` or use a pre-trained one.
 
+### Skill-Generator 
+To train the skill generator, run:
+```
+python skill_generator/skill_generator/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset 
+```
 
 ### Ablations
 Hierarchical Universal Language Conditioned Policies (HULC), (Oier et al. 2022)

@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from .action_decoder import ActionDecoder
 import skill_generator.models.skill_generator as model_sg
@@ -12,6 +13,8 @@ from spil.models.decoders.utils.gripper_control import tcp_to_world_frame, world
 from torch.distributions import Normal
 from collections import deque
 from spil.models.decoders.utils.rnn import gru_decoder, lstm_decoder, mlp_decoder, rnn_decoder  # needed for line 60
+
+logger = logging.getLogger(__name__)
 
 
 class SkillDecoder(ActionDecoder):
@@ -60,7 +63,7 @@ class SkillDecoder(ActionDecoder):
         self.hidden_state = {'skill_emb': None, 'skill_cls': None}
         self.sg_chk_path = Path(sg_chk_path)
         if not self.sg_chk_path.is_absolute():
-            self.sg_chk_path = Path(spil.__file__).parent.parent / self.sg_chk_path
+            self.sg_chk_path = Path(spil.__file__).parents[1] / self.sg_chk_path
 
         self.skill_len = torch.tensor(skill_len)
         self.gamma_1 = gamma_1
@@ -76,6 +79,7 @@ class SkillDecoder(ActionDecoder):
 
         """
         chk = get_last_checkpoint(self.sg_chk_path)
+        logger.info(f'load from skill generator checkpoint {chk}')
         if chk is not None:
             self.skill_generator = getattr(model_sg, 'SkillGenerator').load_from_checkpoint(chk.as_posix())
         self.skill_generator.freeze()
@@ -200,7 +204,7 @@ class SkillDecoder(ActionDecoder):
     def _categorical_reg_loss(
             self,
             skill_cls: torch.Tensor,
-            eps: float = 1e-6
+            eps: float = 1e-3
     ):
         """
         Args:
@@ -209,7 +213,7 @@ class SkillDecoder(ActionDecoder):
             categorical_reg_loss: the loss to regularize the base skill selection.
         """
         skill_cls = torch.clip(skill_cls, min=eps)
-        return torch.sum(skill_cls * torch.log(skill_cls / self.base_skill_prior[None, None, :].to(skill_cls)), dim=-1).mean()
+        return torch.mean(skill_cls * torch.log(skill_cls / self.base_skill_prior[None, None, :].to(skill_cls)))
 
     def act(
             self,

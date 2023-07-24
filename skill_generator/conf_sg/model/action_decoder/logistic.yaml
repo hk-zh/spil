@@ -1,7 +1,7 @@
 _target_: skill_generator.models.decoders.logistic_decoder.LogisticDecoder
 act_dim: ${datamodule.action_space}
 latent_dim: ${model.skill_dim}
-layer_size: 128
+layer_size: 256
 num_layers: 2
 n_dist: 3
 criterion: HuberLoss #MSELoss
