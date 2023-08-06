@@ -4,7 +4,7 @@
 
 [<b>Language-Conditioned Robot Manipulation With Base Skill Priors Under Unstructured Data</b>](https://)
 
-![Architecture](https://github.com/hk-zh/spil/assets/57254021/76bfc328-0d32-4140-85fa-219d0a591de7)
+![architecture](https://github.com/hk-zh/spil/assets/57254021/939dd916-f325-42a4-b02c-d1e8b0c1345a)
 
 ## Installation
 To begin, clone this repository locally
