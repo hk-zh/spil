@@ -4,7 +4,7 @@
 
 [<b>Language-Conditioned Robot Manipulation With Base Skill Priors Under Unstructured Data</b>](https://)
 
-![SPIL](https://github.com/Hongkuan-Zhou/spil/assets/57254021/0e205350-4b50-4413-8792-b60d08c590d6)
+![Architecture](https://github.com/hk-zh/spil/assets/57254021/76bfc328-0d32-4140-85fa-219d0a591de7)
 
 ## Installation
 To begin, clone this repository locally
@@ -108,6 +108,8 @@ You can instead specify the path to another checkpoint by adding this to the eva
 
 
 https://github.com/Hongkuan-Zhou/spil/assets/57254021/5e2df33f-7446-4113-8967-39109b7ffb09
+
+
 
 
 ## Acknowledgements
