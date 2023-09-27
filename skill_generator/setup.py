@@ -35,7 +35,6 @@ meta = dict(
     keywords="pytorch Lfp".split(),
     author=find_meta(_meta, "__author__"),
     author_email=find_meta(_meta, "__email__"),
-    url="https://github.com/Hongkuan-Zhou/spil",
     packages=find_packages(exclude=["tests"]),
     install_requires=install_requires,
 )

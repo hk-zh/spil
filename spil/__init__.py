@@ -5,6 +5,6 @@
 
 __version__ = "0.0.1"
 __project__ = "SPIL"
-__author__ = "Hongkuan Zhou"
+__author__ = "Anonymous"
 __license__ = "MIT"
-__email__ = "zhouh@in.tum.de"
+__email__ = "Anonymous"

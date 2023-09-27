@@ -9,7 +9,7 @@
 ## Installation
 To begin, clone this repository locally
 ```bash
-git clone --recurse-submodules https://github.com/Hongkuan-Zhou/spil
+git clone --recurse-submodules xxx
 export ROOT=$(pwd)/spil
 
 ```
@@ -104,11 +104,6 @@ Optional arguments:
 - `--checkpoint <PATH/TO/CHECKPOINT>`: by default, the evaluation loads the last checkpoint in the training log directory.
 You can instead specify the path to another checkpoint by adding this to the evaluation command.
 - `--debug`: print debug information and visualize environment.
-## Real-world Experiments
-
-
-https://github.com/Hongkuan-Zhou/spil/assets/57254021/5e2df33f-7446-4113-8967-39109b7ffb09
-
 
 
 
