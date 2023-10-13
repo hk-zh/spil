@@ -73,7 +73,7 @@ To train the skill generator, run:
 ```
 python skill_generator/skill_generator/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset 
 ```
-Note that you should first train the skill-generator if you did not download the pre-trained skill generator
+Note that you should first train the skill-generator if you did not download the pre-trained skill generator.
 ### Ablations
 Hierarchical Universal Language Conditioned Policies (HULC), (Oier et al. 2022)
 ```
