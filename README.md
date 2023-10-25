@@ -1,9 +1,8 @@
-# SPIL
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+#  Language-Conditioned Robot Manipulation With Base Skill Priors Under Unstructured Data
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[<b>Language-Conditioned Robot Manipulation With Base Skill Priors Under Unstructured Data</b>](https://)
-
+## [Paper](https://arxiv.org/pdf/2305.19075.pdf) | [Project Page](https://hk-zh.github.io/spil/)
 ![architecture](https://github.com/hk-zh/spil/assets/57254021/939dd916-f325-42a4-b02c-d1e8b0c1345a)
 
 ## Installation
