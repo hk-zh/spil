@@ -39,10 +39,10 @@ sh download_lang_embeddings.sh D | ABC | ABCD
 
 ### Pre-trained Models
 #### D -> D
-- Pre-trained **SKILL Generator** can be downloaded [here](https://drive.google.com/drive/folders/1y4DM45ltB6mecrkjwF48d9NpJD0eYA1M?usp=sharing)
+- Pre-trained **SKILL Generator** can be downloaded [here](https://drive.google.com/drive/folders/1y4DM45ltB6mecrkjwF48d9NpJD0eYA1M?usp=sharing) (epoch-98)
 - Pre-trained **Model** can be downloaded [here](https://drive.google.com/drive/folders/1CTcwDwhoSocZ5PdHROmOOqr3MXAM4thN?usp=sharing)
 #### ABC -> D
-- Pre-trained **SKILL Generator** can be downloaded [here](https://drive.google.com/drive/folders/1EbpG5zW4siQi5BJxXc2Js_4gxmTum2jA?usp=sharing)
+- Pre-trained **SKILL Generator** can be downloaded [here](https://drive.google.com/drive/folders/1EbpG5zW4siQi5BJxXc2Js_4gxmTum2jA?usp=sharing) (epoch-86)
 - Pre-trained **Model** can be downloaded [here](https://drive.google.com/drive/folders/1BDw8NXykYlsEyTAidVUqN1A-V-6VXUtV?usp=sharing)
 
 ## Hardware Requirements
