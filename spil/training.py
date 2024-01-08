@@ -12,7 +12,7 @@ from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.loggers import LightningLoggerBase
 from pytorch_lightning.utilities import rank_zero_only
 
-import spil.models.hulc as models_m
+import spil.models.spil as models_m
 from spil.utils.utils import (
     get_git_commit_hash,
     get_last_checkpoint,
