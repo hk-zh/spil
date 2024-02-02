@@ -106,8 +106,9 @@ You can instead specify the path to another checkpoint by adding this to the eva
 ## Real-world Experiments
 
 
-https://github.com/Hongkuan-Zhou/spil/assets/57254021/5e2df33f-7446-4113-8967-39109b7ffb09
 
+
+https://github.com/hk-zh/spil/assets/57254021/6715986a-51c0-4159-9fcf-6bd644752c62
 
 
 
