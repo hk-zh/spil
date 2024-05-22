@@ -832,6 +832,7 @@ class Spil(pl.LightningModule):
         self.plan = None
         self.latent_goal = None
         self.rollout_step_counter = 0
+        self.action_decoder.clear_cached_actions()
 
     def step(self, obs, goal):
         """
