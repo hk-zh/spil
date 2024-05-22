@@ -46,3 +46,6 @@ class ActionDecoder(nn.Module):
 
     def clear_hidden_state(self) -> None:
         pass
+
+    def clear_cached_actions(self) -> None:
+        pass

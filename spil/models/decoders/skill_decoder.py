@@ -118,6 +118,9 @@ class SkillDecoder(ActionDecoder):
     def clear_hidden_state(self) -> None:
         self.hidden_state = {'skill_emb': None, 'skill_cls': None}
 
+    def clear_cached_actions(self) -> None:
+        self.cached_actions = deque([])
+
     def forward(
             self,
             latent_plan: torch.Tensor,
