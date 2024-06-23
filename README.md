@@ -52,6 +52,15 @@ Trained with:
 - **OS** - Ubuntu 20.04
 
 ## Training
+Before you start your training, please remember to update the wandb account at
+- conf/logger/wandb.yaml
+- skill_generator/conf_sg/logger/wandb.yaml
+
+To login your wandb account, first run:
+```
+wandb login --relogin
+```
+
 ### SPIL model
 To train the spil model with the maximum amount of available GPUS, run:
 ```
