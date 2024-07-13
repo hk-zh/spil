@@ -12,7 +12,8 @@ from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.loggers import LightningLoggerBase
 from pytorch_lightning.utilities import rank_zero_only
 
-import spil.models.spil as models_m
+from spil.models.hulc import Hulc
+from spil.models.spil import Spil
 from spil.utils.utils import (
     get_git_commit_hash,
     get_last_checkpoint,
@@ -38,7 +39,7 @@ def train(cfg: DictConfig) -> None:
 
     # Load Model
     if chk is not None:
-        model = getattr(models_m, cfg.model["_target_"].split(".")[-1]).load_from_checkpoint(chk.as_posix())
+        model = eval(cfg.model["_target_"].split(".")[-1]).load_from_checkpoint(chk.as_posix())
     else:
         model = hydra.utils.instantiate(cfg.model)
         if "pretrain_chk" in cfg:
