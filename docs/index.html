@@ -750,6 +750,18 @@
               <span class="math inline">\(\rightarrow\)</span> D) and 30 epochs for
               Zero-shot Multi Environment (ABC <span class="math inline">\(\rightarrow\)</span> D).
             </p>
+            <h2 id="insights">Insights</h2>
+            <h3 id="insight1">Faster convergence of SPIL</h3>
+            <p>
+            We observe that predicting skill embeddings instead of actions leads to faster model convergence. This may be because the action sequences are compressed into skill embeddings, reducing dimensional complexity and making it easier for the agent to learn.
+            </p>
+            <h3 id="insight2">Challenge of sim2real experiments</h3>
+            <p>
+            For both SPIL and HULC, we observed that the agent often moves toward the target object but misjudges the distance between the gripper and the object, preventing it from making contact. This issue arises from the differences between the simulator observations and the real world, particularly in camera angles and light condition changes. Incorporating base skills can reduce the noise in actions when manipulating the target object. Our SPIL model performs more smoothly than the HULC model, which exhibits noticeable movement oscillations. Thus, our SPIL model achieves a higher success rate than HULC in the real-world experiment. 
+            </p>
+            <p>
+            We found that estimating distance using gripper and static cameras remains challenging for the agent. Even slight disturbances in camera angle can significantly degrade the agent's performance. For this reason, we include stronger data augmentations like random perspective transforms and color jitter in the training process. We also hypothesize that incorporating depth information could improve the model's performance in the zero-shot real-world experiments. 
+            </p>
             <h2 id="theoretical-motivation">Theoretical Motivation</h2>
             <h3 id="subsec:Continuous Skill Embeddings With Base Skill Priors">Continuous
               Skill Embeddings With Base Skill Priors</h3>
