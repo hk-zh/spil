@@ -64,11 +64,11 @@ wandb login --relogin
 ### SPIL model
 To train the spil model with the maximum amount of available GPUS, run:
 ```
-python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset model.action_decoder.sg_chk_path=path/to/skill_generator datamodule/datasets=vision_lang
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset model.action_decoder.sg_chk_path=path/to/skill_generator datamodule/datasets=vision_lang loss=your_loss_setting
 ```
 To accelerate training process, the dataset can be first loaded into shared memory. (Note this way requires more RAM, please make sure your server has enough RAM)
 ```
-python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset model.action_decoder.sg_chk_path=path/to/skill_generator datamodule/datasets=vision_lang_shm
+python spil/training.py trainer.gpus=-1 datamodule.root_data_dir=path/to/dataset model.action_decoder.sg_chk_path=path/to/skill_generator datamodule/datasets=vision_lang_shm loss=your_loss_setting
 ```
 - The `vision_lang_shm` option loads the CALVIN dataset into shared memory at the beginning of the training,
 speeding up the data loading during training.
