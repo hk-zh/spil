@@ -141,6 +141,21 @@ License: [Apache 2.0](https://github.com/UKPLab/sentence-transformers/blob/maste
 Original: [https://github.com/openai/CLIP](https://github.com/openai/CLIP)
 License: [MIT](https://github.com/openai/CLIP/blob/main/LICENSE)
 
+## Citation
+If you find this article intersting, please cite:
+```
+@ARTICLE{zhou2024languageconditioned,
+  author={Zhou, Hongkuan and Bing, Zhenshan and Yao, Xiangtong and Su, Xiaojie and Yang, Chenguang and Huang, Kai and Knoll, Alois},
+  journal={IEEE Robotics and Automation Letters}, 
+  title={Language-Conditioned Imitation Learning with Base Skill Priors under Unstructured Data}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={1-8},
+  keywords={Imitation Learning;Robotic Manipulation},
+  doi={10.1109/LRA.2024.3466076}
+}
+```
 
 ## License
 MIT License
